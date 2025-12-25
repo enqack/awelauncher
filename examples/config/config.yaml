@@ -1,6 +1,26 @@
-general:
-  theme: "auto"  # Use "auto" for base16 system theme, or specify a theme name
+# awelauncher configuration logic
+# This file should be placed at ~/.config/awelauncher/config.yaml
 
-window:
-  width: 600
-  height: 400
+general:
+  # Theme selection
+  # Options:
+  # - "auto": Try to detect base16-shell environment variables (default)
+  # - "default": Use built-in dark theme
+  # - <name>: Load from ~/.config/awelauncher/themes/<name>.yaml
+  theme: "auto"
+
+# Global layout overrides (optional)
+# These settings will override the loaded theme's layout values.
+# layout:
+#   padding: 20
+#   rowHeight: 48
+#   fontSize: 16
+#   rowHeight: 48
+#   fontSize: 16
+#   iconSize: 32
+#   radius: 16
+
+# Window size overrides (optional)
+# window:
+#   width: 800
+#   height: 500

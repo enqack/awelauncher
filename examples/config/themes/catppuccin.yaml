@@ -5,6 +5,8 @@ colors:
   accent: "#f5c2e7"      # Pink accent
   selected: "#45475a"
   muted: "#a6adc8"
+  hover: "#585b70"
+  border: "#6c7086"
 
 layout:
   radius: 16
@@ -13,3 +15,7 @@ layout:
   fontSize: 15
   iconSize: 28
   opacity: 0.92          # Window transparency (0.0 - 1.0)
+
+window:
+  width: 600
+  height: 400

@@ -5,8 +5,12 @@ A fast, minimal Wayland launcher built with Qt6 and QtQuick.
 ## Features
 
 - **Fuzzy search** with visual match highlighting
-- **Multiple modes**: Desktop apps (drun), command runner (run)
-- **MRU boost**: Recently used apps appear higher in results
+- **Multiple modes**: 
+  - Desktop apps (drun)
+  - Command runner (run)
+  - Window switcher (window) - Wayland window management
+- **Window controls**: Switch, close, fullscreen, maximize, minimize
+- **MRU boost**: Recently used apps/windows appear higher in results
 - **Icon caching**: Async loading with disk cache for instant startup
 - **Theming**: YAML-based themes + base16 system theme support
 - **Performance**: 76ms cold start, < 16ms search updates
@@ -66,6 +70,9 @@ awelaunch --show drun
 # Launch command runner
 awelaunch --show run
 
+# Launch window switcher (Wayland)
+awelaunch --show window
+
 # Use custom theme
 awelaunch --theme catppuccin
 
@@ -75,16 +82,26 @@ awelaunch --debug
 
 ### Keybindings
 
+**All modes:**
 - `Esc` - Dismiss launcher
-- `Enter` - Launch selected item
+- `Enter` - Activate selected item
 - `↑/↓` - Navigate results
 - Type to fuzzy search
 
+**Window mode only:**
+- `Ctrl+D` - Close window
+- `Ctrl+F` - Toggle fullscreen
+- `Ctrl+X` - Toggle maximize
+- `Ctrl+N` - Toggle minimize
+
 ## Architecture
 
-- **Controllers**: `LauncherController` - handles app launching
+- **Controllers**: `LauncherController` - handles app launching and window actions
 - **Models**: `LauncherModel` - manages items and search filtering
-- **Providers**: Desktop file loader, icon provider
+- **Providers**: 
+  - `DesktopFileLoader` - scans .desktop files
+  - `IconProvider` - async icon loading
+  - `WindowProvider` - Wayland window enumeration and control
 - **Utils**: Config, theme, fuzzy matcher, MRU tracker
 
 See `docs/design-doc.md` for full design specification.

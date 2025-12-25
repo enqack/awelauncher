@@ -9,6 +9,7 @@
 #include "App/utils/Theme.h"
 #include "App/providers/IconProvider.h"
 #include "App/providers/DesktopFileLoader.h"
+#include "App/providers/WindowProvider.h"
 
 #include <QStandardPaths>
 #include <QDir>
@@ -24,7 +25,7 @@ int main(int argc, char *argv[])
 {
     QGuiApplication app(argc, argv);
     app.setApplicationName("awelauncher");
-    app.setApplicationVersion("0.1.0");
+    app.setApplicationVersion(APP_VERSION);
     app.setOrganizationName("awelauncher");
     app.setOrganizationDomain("awelauncher");
     app.setDesktopFileName("awelaunch");
@@ -50,6 +51,10 @@ int main(int argc, char *argv[])
     QCommandLineOption debugOption(QStringList() << "d" << "debug",
         "Enable debug output");
     parser.addOption(debugOption);
+
+    QCommandLineOption clearCacheOption(QStringList() << "c" << "clear-cache",
+        "Clear icon cache on startup");
+    parser.addOption(clearCacheOption);
     
     parser.process(app);
     
@@ -57,11 +62,21 @@ int main(int argc, char *argv[])
     bool debugMode = parser.isSet(debugOption);
     QElapsedTimer timer;
     timer.start();
+
+    if (parser.isSet(clearCacheOption)) {
+        QString cacheDir = QStandardPaths::writableLocation(QStandardPaths::CacheLocation) + "/awelauncher/icons";
+        QDir dir(cacheDir);
+        if (dir.exists()) {
+            dir.removeRecursively();
+            qDebug() << "Cleared icon cache:" << cacheDir;
+        }
+    }
     
     PROFILE_POINT("App init");
 
     // Load Config
     QString configPath = QStandardPaths::writableLocation(QStandardPaths::ConfigLocation) + "/awelauncher/config.yaml";
+    Config::instance().ensureDefaults();
     Config::instance().load(configPath);
     
     PROFILE_POINT("Config loaded");
@@ -135,6 +150,19 @@ int main(int argc, char *argv[])
             }
         }
         model.setItems(pathItems);
+    } else if (showMode == "window") {
+        // Load windows from Wayland
+        WindowProvider* windowProvider = new WindowProvider(&app);
+        if (windowProvider->initialize()) {
+            auto windows = windowProvider->getWindows();
+            std::vector<LauncherItem> windowItems(windows.begin(), windows.end());
+            model.setItems(windowItems);
+            controller.setWindowProvider(windowProvider);
+            qDebug() << "Loaded" << windows.size() << "windows";
+        } else {
+            qWarning() << "Failed to initialize window provider";
+            delete windowProvider;
+        }
     } else {
         // Load desktop applications (drun mode)
         model.setItems(DesktopFileLoader::scan());

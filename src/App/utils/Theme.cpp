@@ -1,4 +1,5 @@
 #include "Theme.h"
+#include "Config.h"
 #include <QStandardPaths>
 #include <QFile>
 #include <QDebug>
@@ -106,12 +107,45 @@ void Theme::load(const QString& themeName)
                 if (m_opacity > 1.0) m_opacity = 1.0;
             }
         }
+        
+        if (auto window = theme["window"]) {
+            m_windowWidth = getIntVal(window, "width", m_windowWidth);
+            m_windowHeight = getIntVal(window, "height", m_windowHeight);
+        }
 
-        emit themeChanged();
+        // emit themeChanged(); // Deferred to end of function
         
     } catch (const YAML::Exception& e) {
         qWarning() << "Failed to parse theme file:" << e.what();
     } catch (...) {
         qWarning() << "Unknown error loading theme:" << themePath;
     }
+
+
+    // Priority 0: Global Config Overrides
+    // Always apply these on top of whatever theme was loaded
+    Config& c = Config::instance();
+    m_padding = c.getInt("layout.padding", m_padding);
+    m_rowHeight = c.getInt("layout.rowHeight", m_rowHeight);
+    m_fontSize = c.getInt("layout.fontSize", m_fontSize);
+    m_iconSize = c.getInt("layout.iconSize", m_iconSize);
+    m_radius = c.getInt("layout.radius", m_radius);
+    
+    // Opacity override is a bit trickier since we don't have getDouble yet, 
+    // but the Config class uses YAML::Node so we can add getDouble or just hack it for now.
+    // Let's assume valid range if provided.
+    // For now, let's just stick to integer overrides or add getDouble to Config if needed.
+    // Wait, Config doesn't have getDouble. Let's add it or rely on int/string parsing.
+    // Simpler: Just override metrics for now.
+    
+    // Window size overrides
+    qInfo() << "Checking config for window overrides...";
+
+
+    m_windowWidth = c.getInt("window.width", m_windowWidth);
+    m_windowHeight = c.getInt("window.height", m_windowHeight);
+    
+    qInfo() << "Final Window Size:" << m_windowWidth << "x" << m_windowHeight;
+
+    emit themeChanged();
 }

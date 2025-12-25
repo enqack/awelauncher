@@ -5,12 +5,12 @@ import awelauncher
 
 Window {
     id: root
-    width: 600
-    height: 400
-    minimumWidth: 600
-    maximumWidth: 600
-    minimumHeight: 400
-    maximumHeight: 400
+    width: AppTheme.windowWidth
+    height: AppTheme.windowHeight
+    minimumWidth: AppTheme.windowWidth
+    maximumWidth: AppTheme.windowWidth
+    minimumHeight: AppTheme.windowHeight
+    maximumHeight: AppTheme.windowHeight
     x: (Screen.width - width) / 2
     y: (Screen.height - height) / 2
     visible: true
@@ -33,10 +33,9 @@ Window {
         root.requestActivate()
     }
     
-    Keys.onEscapePressed: {
-        Qt.quit()
-    }
-
+    property bool showHelp: false
+    
+    
     // Background wrapper for rounded corners on the whole window content
     Rectangle {
         id: bg
@@ -118,10 +117,105 @@ Window {
                 }
                 Item { Layout.fillWidth: true }
                 Text {
-                    text: "Enter to select  •  Esc to close"
+                    Layout.fillWidth: true
+                    Layout.maximumWidth: parent.width * 0.6
+                    text: cliShowMode === "window" ? 
+                          "Ctrl+H for help" :
+                          "Enter to select • Esc to close"
                     color: Qt.darker(AppTheme.fg, 1.5)
                     font.pixelSize: AppTheme.fontSize * 0.7
+                    elide: Text.ElideRight
+                    horizontalAlignment: Text.AlignRight
                 }
+            }
+        }
+    }
+    
+    // Help overlay
+    Rectangle {
+        anchors.fill: parent
+        visible: showHelp
+        color: Qt.rgba(0, 0, 0, 0.9)
+        
+        MouseArea {
+            anchors.fill: parent
+            onClicked: showHelp = false
+        }
+        
+        ColumnLayout {
+            anchors.centerIn: parent
+            spacing: 20
+            
+            Text {
+                text: "Keybindings"
+                color: AppTheme.accent
+                font.pixelSize: AppTheme.fontSize * 1.5
+                font.bold: true
+                Layout.alignment: Qt.AlignHCenter
+            }
+            
+            ColumnLayout {
+                spacing: 8
+                visible: cliShowMode === "window"
+                
+                Text {
+                    text: "Enter - Switch to window"
+                    color: AppTheme.fg
+                    font.pixelSize: AppTheme.fontSize
+                }
+                Text {
+                    text: "Ctrl+D - Close window"
+                    color: AppTheme.fg
+                    font.pixelSize: AppTheme.fontSize
+                }
+                Text {
+                    text: "Ctrl+F - Toggle fullscreen"
+                    color: AppTheme.fg
+                    font.pixelSize: AppTheme.fontSize
+                }
+                Text {
+                    text: "Ctrl+X - Toggle maximize"
+                    color: AppTheme.fg
+                    font.pixelSize: AppTheme.fontSize
+                }
+                Text {
+                    text: "Ctrl+N - Toggle minimize"
+                    color: AppTheme.fg
+                    font.pixelSize: AppTheme.fontSize
+                }
+                Text {
+                    text: "Ctrl+M - Move to next monitor"
+                    color: AppTheme.fg
+                    font.pixelSize: AppTheme.fontSize
+                }
+            }
+            
+            ColumnLayout {
+                spacing: 8
+                
+                Text {
+                    text: "↑/↓ - Navigate results"
+                    color: AppTheme.fg
+                    font.pixelSize: AppTheme.fontSize
+                }
+                Text {
+                    text: "Esc - Close launcher"
+                    color: AppTheme.fg
+                    font.pixelSize: AppTheme.fontSize
+                }
+                Text {
+                    text: "Ctrl+H - Toggle this help"
+                    color: AppTheme.fg
+                    font.pixelSize: AppTheme.fontSize
+                }
+            }
+            
+            Text {
+                text: "Press Esc or click anywhere to close"
+                color: Qt.darker(AppTheme.fg, 1.5)
+                font.pixelSize: AppTheme.fontSize * 0.8
+                Layout.alignment: Qt.AlignHCenter
+                Layout.topMargin: 20
             }
         }
     }
@@ -129,6 +223,54 @@ Window {
     // Close on Escape
     Shortcut {
         sequence: "Esc"
-        onActivated: Qt.quit()
+        onActivated: {
+            if (showHelp) {
+                showHelp = false
+            } else {
+                Qt.quit()
+            }
+        }
+    }
+    
+    Shortcut {
+        sequence: "Ctrl+H"
+        onActivated: showHelp = !showHelp
+    }
+    
+    // Window mode actions
+    Shortcut {
+        enabled: cliShowMode === "window"
+        sequence: "Ctrl+D"
+        onActivated: Controller.closeWindow(resultsList.currentIndex)
+    }
+    
+    Shortcut {
+        enabled: cliShowMode === "window"
+        sequence: "Ctrl+F"
+        onActivated: Controller.toggleFullscreen(resultsList.currentIndex)
+    }
+    
+    Shortcut {
+        enabled: cliShowMode === "window"
+        sequence: "Ctrl+X"
+        onActivated: Controller.toggleMaximize(resultsList.currentIndex)
+    }
+    
+    Shortcut {
+        enabled: cliShowMode === "window"
+        sequence: "Ctrl+N"
+        onActivated: Controller.toggleMinimize(resultsList.currentIndex)
+    }
+    
+    Shortcut {
+        enabled: cliShowMode === "window"
+        sequence: "Ctrl+M"
+        onActivated: {
+            var outputs = Controller.getOutputs();
+            if (outputs.length > 1) {
+                // Cycle to next output (simple implementation)
+                Controller.moveWindowToOutput(resultsList.currentIndex, outputs[0]);
+            }
+        }
     }
 }

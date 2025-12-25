@@ -5,6 +5,8 @@
 #include <QStandardPaths>
 #include <QDir>
 #include <QCryptographicHash>
+#include <QIcon>
+#include <QPixmap>
 
 class IconRunner : public QRunnable
 {
@@ -44,30 +46,50 @@ void IconResponse::run()
     }
     
     // Generate icon (cache miss)
-    m_image = QImage(size, size, QImage::Format_ARGB32);
-    m_image.fill(Qt::transparent);
     
-    QPainter p(&m_image);
-    p.setRenderHint(QPainter::Antialiasing);
+    // 1. Try absolute path
+    if (m_id.startsWith("/")) {
+        m_image.load(m_id);
+    }
+    
+    // 2. Try system theme
+    if (m_image.isNull()) {
+        QIcon icon = QIcon::fromTheme(m_id);
+        if (!icon.isNull()) {
+            QPixmap pix = icon.pixmap(size, size);
+            if (!pix.isNull()) {
+                m_image = pix.toImage();
+            }
+        }
+    }
 
-    // Pick color from string hash
-    quint32 hash_color = qHash(m_id);
-    QColor bg = QColor::fromHsl((hash_color % 360), 200, 150);
-    
-    // Draw rounded rect
-    p.setBrush(bg);
-    p.setPen(Qt::NoPen);
-    p.drawRoundedRect(0, 0, size, size, size/4.0, size/4.0);
-    
-    // Draw initial
-    p.setPen(Qt::white);
-    QFont f = p.font();
-    f.setPixelSize(size * 0.5);
-    f.setBold(true);
-    p.setFont(f);
-    
-    QString letter = m_id.left(1).toUpper();
-    p.drawText(m_image.rect(), Qt::AlignCenter, letter);
+    // 3. Fallback to placeholder if still null
+    if (m_image.isNull()) {
+        m_image = QImage(size, size, QImage::Format_ARGB32);
+        m_image.fill(Qt::transparent);
+        
+        QPainter p(&m_image);
+        p.setRenderHint(QPainter::Antialiasing);
+
+        // Pick color from string hash
+        quint32 hash_color = qHash(m_id);
+        QColor bg = QColor::fromHsl((hash_color % 360), 200, 150);
+        
+        // Draw rounded rect
+        p.setBrush(bg);
+        p.setPen(Qt::NoPen);
+        p.drawRoundedRect(0, 0, size, size, size/4.0, size/4.0);
+        
+        // Draw initial
+        p.setPen(Qt::white);
+        QFont f = p.font();
+        f.setPixelSize(size * 0.5);
+        f.setBold(true);
+        p.setFont(f);
+        
+        QString letter = m_id.left(1).toUpper();
+        p.drawText(m_image.rect(), Qt::AlignCenter, letter);
+    }
     
     // Save to cache
     m_image.save(cachePath, "PNG");

@@ -33,6 +33,8 @@
               qt6.qtbase
               qt6.qtdeclarative
               qt6.qtwayland
+              wayland
+              wayland-protocols
               yaml-cpp
             ];
           };
@@ -50,12 +52,15 @@
               cmake
               ninja
               qt6.wrapQtAppsHook
+              go-task
             ];
 
             buildInputs = with pkgs; [
               qt6.qtbase
               qt6.qtdeclarative
               qt6.qtwayland
+              wayland
+              wayland-protocols
               yaml-cpp
             ];
 

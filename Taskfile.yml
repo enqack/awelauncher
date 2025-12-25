@@ -1,0 +1,62 @@
+version: '3'
+
+tasks:
+  build:
+    desc: Build the project
+    cmds:
+      - mkdir -p build
+      - cd build && cmake ..
+      - cd build && make
+
+  clean:
+    desc: Clean build artifacts
+    cmds:
+      - rm -rf build
+
+  rebuild:
+    desc: Clean and rebuild
+    cmds:
+      - task: clean
+      - task: build
+
+  run:
+    desc: Run in drun mode
+    cmds:
+      - ./build/awelaunch --show drun
+
+  run-window:
+    desc: Run in window mode
+    cmds:
+      - ./build/awelaunch --show window
+
+  run-cmd:
+    desc: Run in command mode
+    cmds:
+      - ./build/awelaunch --show run
+
+  debug:
+    desc: Run with debug output
+    cmds:
+      - ./build/awelaunch --debug
+
+  install:
+    desc: Install to system
+    cmds:
+      - cd build && sudo make install
+
+  dev:
+    desc: Enter nix dev shell and build
+    cmds:
+      - nix develop -c bash -c "task build && exec bash"
+
+  format:
+    desc: Format code (if clang-format available)
+    cmds:
+      - find src -name "*.cpp" -o -name "*.h" | xargs clang-format -i
+    silent: true
+    ignore_error: true
+
+  default:
+    desc: Build the project (default task)
+    cmds:
+      - task: build

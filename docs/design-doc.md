@@ -1,4 +1,4 @@
-## awelauncher — QtQuick Wayland Launcher (Design Spec v0.1)
+## awelauncher — QtQuick Wayland Launcher (Design Spec v0.2.0-draft)
 
 ### Mission
 
@@ -10,7 +10,7 @@ A wofi-simple launcher with **Qt-grade sizing/styling/icons**, implemented with 
 - CLI contract (all flags working)
 - QML boundary (LauncherRoot, ResultRow, Controller, Model, Theme)
 - Icon pipeline (async + disk cache)
-- Providers: drun (desktop apps), run (PATH executables + commands)
+- Providers: drun (desktop apps), run (PATH executables), **window (Wayland window switcher)**
 - Fuzzy matching with visual highlighting
 - MRU boost scoring
 - Theme system (YAML + base16 support)
@@ -18,11 +18,32 @@ A wofi-simple launcher with **Qt-grade sizing/styling/icons**, implemented with 
 - Performance: 76ms cold start (exceeds < 50ms warm target)
 - Esc to dismiss
 - Extended theme tokens
+- **Window management**: activate, close, fullscreen, maximize, minimize
+- **Taskfile build automation**
 
 **⏭️ Deferred:**
-- Window provider (Wayland foreign-toplevel - complex)
+- Multi-monitor window move (needs output tracking)
 - Prefix/substring matching modes (fuzzy covers most use cases)
 - Multiple actions per item
+
+**🚧 Planned (v0.2.0):**
+- **dmenu Compliance**:
+  - Read items from stdin (pipe)
+  - Print selected item to stdout
+  - Compatibility with dmenu scripts
+- **Advanced Window Positioning**:
+  - Anchoring (top, bottom, left, right, center)
+  - Configurable margins/offsets
+  - CLI overrides for geometry (`--width`, `--height`, `--anchor`)
+- **Monitor Selection UI**:
+  - Visual picker for `moveToOutput` action
+  - Explicit target monitor selection
+- **CLI Config Overrides**:
+  - Allow forcing config values via command line flags
+
+**🔮 Future (v0.3+):**
+- **Workspace movement** (requires protocol support)
+- **Plugin System**
 
 ### Core principles
 
@@ -45,9 +66,12 @@ A wofi-simple launcher with **Qt-grade sizing/styling/icons**, implemented with 
 
 ## CLI contract (MVP)
 
-* `awelaunch --show drun|run|window`
+* `awelaunch --show drun|run|window|dmenu`
 * `awelaunch --theme <name>`
 * `awelaunch --prompt "…"`
+* `awelaunch --dmenu` (alias for `--show dmenu`)
+* `awelaunch --width <int> --height <int>`
+* `awelaunch --anchor <center|top|bottom|left|right>`
 * `awelaunch --debug`
 
 Design intent: the CLI is *stable and scriptable*, not a dumping ground.
@@ -84,12 +108,11 @@ Required roles:
 * `primary: string`
 * `secondary: string`
 * `iconKey: string`
-* `iconReady: bool` (optional but helps placeholders)
+* `exec: string` (empty for window mode)
+* `terminal: bool`
 * `selected: bool`
-* `bestMatchStart: int`
-* `bestMatchLen: int`
+* `matchPositions: array<int>` (for fuzzy match highlighting)
 * `provider: string` (optional/debug)
-* `actionDefault: string`
 
 Optional later:
 
@@ -106,6 +129,7 @@ Token-driven. All geometry is derived from a small set of theme values.
 
 * **Typography**: `fontSize` ✅, `secondaryFontSize` ✅
 * **Metrics**: `padding` ✅, `rowHeight` ✅, `radius` ✅, `borderWidth` ✅, `iconSize` ✅, `opacity` ✅
+* **Positioning**: `anchor` (v0.2)
 * **Colors**: `bg` ✅, `fg` ✅, `muted` ✅, `accent` ✅, `hover` ✅, `selected` ✅, `border` ✅
 
 **Not implemented (future):**
@@ -145,7 +169,17 @@ This is one of the secret ingredients that makes it feel “native”.
 
 * **drun**: desktop entries ✅ (scans XDG paths, parses .desktop files)
 * **run**: raw command execution ✅ (PATH scanning + synthetic run items)
-* **window**: Wayland foreign-toplevel ⏭️ (deferred - requires wlr protocol integration)
+* **window**: Wayland foreign-toplevel ✅ (wlr-foreign-toplevel-management-unstable-v1)
+  - Enumerates all toplevel windows
+  - Window actions: activate, close, fullscreen, maximize, minimize
+  - Tracks window state (title, app_id, state flags)
+  - Requires wl_seat for activation
+  - Tested on Niri (wlroots-based compositor)
+* **dmenu**: stdin provider 🚧
+  - Reads lines from stdin
+  - Filters based on input
+  - Prints selected line to stdout on exit
+  - No icons by default (unless parsed from specific dmenu extensions, TBD)
 
 ---
 

@@ -5,6 +5,8 @@ colors:
   accent: "#89b4fa"      # Blue accent
   selected: "#313244"
   muted: "#6c7086"
+  hover: "#45475a"       # Used for pointer hover state (future)
+  border: "#6c7086"      # Used for window border (if enabled)
 
 layout:
   radius: 16
@@ -13,3 +15,7 @@ layout:
   fontSize: 16
   iconSize: 32
   opacity: 0.95          # Window transparency (0.0 - 1.0)
+
+window:
+  width: 600
+  height: 400

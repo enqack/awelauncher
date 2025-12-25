@@ -24,6 +24,8 @@ class Theme : public QObject
     Q_PROPERTY(int radius READ radius NOTIFY themeChanged)
     Q_PROPERTY(int borderWidth READ borderWidth NOTIFY themeChanged)
     Q_PROPERTY(qreal opacity READ opacity NOTIFY themeChanged)
+    Q_PROPERTY(int windowWidth READ windowWidth NOTIFY themeChanged)
+    Q_PROPERTY(int windowHeight READ windowHeight NOTIFY themeChanged)
 
 public:
     explicit Theme(QObject *parent = nullptr);
@@ -48,6 +50,8 @@ public:
     int radius() const { return m_radius; }
     int borderWidth() const { return m_borderWidth; }
     qreal opacity() const { return m_opacity; }
+    int windowWidth() const { return m_windowWidth; }
+    int windowHeight() const { return m_windowHeight; }
 
 signals:
     void themeChanged();
@@ -69,4 +73,6 @@ private:
     int m_radius = 16;
     int m_borderWidth = 1;
     qreal m_opacity = 0.95;
+    int m_windowWidth = 600;
+    int m_windowHeight = 400;
 };

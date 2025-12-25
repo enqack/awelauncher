@@ -1,6 +1,14 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(awelauncher VERSION 0.1 LANGUAGES CXX)
+# Suppress developer warnings (like Qt policy warnings)
+set(CMAKE_SUPPRESS_DEVELOPER_WARNINGS ON)
+
+file(READ "VERSION" APP_VERSION)
+string(STRIP "${APP_VERSION}" APP_VERSION)
+
+project(awelauncher VERSION ${APP_VERSION} LANGUAGES C CXX)
+
+add_compile_definitions(APP_VERSION="${APP_VERSION}")
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -26,6 +34,8 @@ add_executable(awelaunch
     src/App/providers/IconProvider.h
     src/App/providers/DesktopFileLoader.cpp
     src/App/providers/DesktopFileLoader.h
+    src/App/providers/WindowProvider.cpp
+    src/App/providers/WindowProvider.h
     src/App/utils/FuzzyMatcher.cpp
     src/App/utils/FuzzyMatcher.h
     src/App/utils/MRUTracker.cpp
@@ -34,12 +44,67 @@ add_executable(awelaunch
 
 target_include_directories(awelaunch PRIVATE src)
 
+# Find wayland packages
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(WAYLAND_CLIENT REQUIRED wayland-client)
+pkg_check_modules(WAYLAND_SCANNER REQUIRED wayland-scanner)
+
+# Get wayland-scanner executable
+pkg_get_variable(WAYLAND_SCANNER_EXEC wayland-scanner wayland_scanner)
+
+# Generate protocol bindings for wlr-foreign-toplevel
+set(PROTOCOL_XML "${CMAKE_SOURCE_DIR}/src/wayland-protocols/wlr-foreign-toplevel-management-unstable-v1.xml")
+set(PROTOCOL_CLIENT_HEADER "${CMAKE_BINARY_DIR}/wlr-foreign-toplevel-client-protocol.h")
+set(PROTOCOL_CODE "${CMAKE_BINARY_DIR}/wlr-foreign-toplevel-protocol.c")
+
+add_custom_command(
+    OUTPUT "${PROTOCOL_CLIENT_HEADER}"
+    COMMAND ${WAYLAND_SCANNER_EXEC} client-header "${PROTOCOL_XML}" "${PROTOCOL_CLIENT_HEADER}"
+    DEPENDS "${PROTOCOL_XML}"
+    VERBATIM
+)
+
+add_custom_command(
+    OUTPUT "${PROTOCOL_CODE}"
+    COMMAND ${WAYLAND_SCANNER_EXEC} private-code "${PROTOCOL_XML}" "${PROTOCOL_CODE}"
+    DEPENDS "${PROTOCOL_XML}"
+    VERBATIM
+)
+
+# Add generated protocol files to build
+add_library(wlr-foreign-toplevel-protocol STATIC
+    ${PROTOCOL_CLIENT_HEADER}
+    ${PROTOCOL_CODE}
+)
+
+# Ensure the .c file is compiled as C, not C++
+set_source_files_properties(${PROTOCOL_CODE} PROPERTIES LANGUAGE C)
+
+target_include_directories(wlr-foreign-toplevel-protocol PUBLIC
+    ${CMAKE_BINARY_DIR}
+    ${WAYLAND_CLIENT_INCLUDE_DIRS}
+)
+
+target_link_libraries(wlr-foreign-toplevel-protocol PUBLIC
+    ${WAYLAND_CLIENT_LIBRARIES}
+)
+
+target_include_directories(awelaunch PRIVATE 
+    ${CMAKE_BINARY_DIR}
+    ${WAYLAND_CLIENT_INCLUDE_DIRS}
+)
+
+# Ensure protocol library is built before awelaunch
+add_dependencies(awelaunch wlr-foreign-toplevel-protocol)
+
 target_link_libraries(awelaunch
     PRIVATE
     Qt6::Quick
     Qt6::Gui
     Qt6::WaylandClient
     yaml-cpp
+    wlr-foreign-toplevel-protocol
+    ${WAYLAND_CLIENT_LIBRARIES}
 )
 
 qt_add_qml_module(awelaunch
@@ -48,6 +113,10 @@ qt_add_qml_module(awelaunch
     QML_FILES
         src/qml/LauncherRoot.qml
         src/qml/ResultRow.qml
+    RESOURCES
+        examples/config/config.yaml
+        examples/config/themes/default.yaml
+        examples/config/themes/catppuccin.yaml
 )
 
 install(TARGETS awelaunch DESTINATION bin)
