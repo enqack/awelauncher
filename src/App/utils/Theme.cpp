@@ -59,103 +59,101 @@ bool loadFromBase16(Theme* theme) {
 
 void Theme::load(const QString& themeName)
 {
+    bool loaded = false;
+
     // Priority 1: Try base16 environment variables (system theme)
     if (themeName == "auto" || themeName == "system" || themeName.isEmpty()) {
         if (loadFromBase16(this)) {
             qInfo() << "Loaded theme from env vars";
-            emit themeChanged();
-            return;
+            loaded = true;
         }
         
-        if (ThemeScanner::tryLoadFromBase16File(this)) {
+        if (!loaded && ThemeScanner::tryLoadFromBase16File(this)) {
              qInfo() << "Loaded theme from ~/.base16_theme";
-             emit themeChanged();
-             return;
+             loaded = true;
         }
         
-        if (ThemeScanner::tryLoadFromWezTerm(this)) {
+        if (!loaded && ThemeScanner::tryLoadFromWezTerm(this)) {
              qInfo() << "Loaded theme from WezTerm config";
-             emit themeChanged();
-             return;
+             loaded = true;
         }
 
-        if (ThemeScanner::tryLoadFromKitty(this)) {
+        if (!loaded && ThemeScanner::tryLoadFromKitty(this)) {
              qInfo() << "Loaded theme from Kitty config";
-             emit themeChanged();
-             return;
+             loaded = true;
         }
         
-       if (ThemeScanner::tryLoadFromAlacritty(this)) {
+        if (!loaded && ThemeScanner::tryLoadFromAlacritty(this)) {
              qInfo() << "Loaded theme from Alacritty config";
-             emit themeChanged();
-             return;
+             loaded = true;
         }
         
-        qDebug() << "Auto-detection failed, falling back to default theme";
-        // Fall back to default theme instead of looking for "auto.yaml"
-        load("default");
-        return;
+        if (!loaded) {
+            qDebug() << "Auto-detection failed, falling back to default theme";
+            // Fall back to default theme instead of looking for "auto.yaml"
+            load("default");
+            return;
+        }
     }
     
     // Priority 2: Load from YAML file
-    QString configDir = QStandardPaths::writableLocation(QStandardPaths::ConfigLocation);
-    QString themePath = configDir + "/awelauncher/themes/" + themeName + ".yaml";
+    if (!loaded) {
+        QString configDir = QStandardPaths::writableLocation(QStandardPaths::ConfigLocation);
+        QString themePath = configDir + "/awelauncher/themes/" + themeName + ".yaml";
 
-    if (!QFile::exists(themePath)) {
-        qWarning() << "[Theme] Theme file not found:" << themePath;
-        qWarning() << "[Theme] You can find example themes in the source under examples/config/themes/";
-        return;
-    }
-
-    try {
-        YAML::Node theme = YAML::LoadFile(themePath.toStdString());
-        qDebug() << "Loading theme from:" << themePath;
-
-        if (auto colors = theme["colors"]) {
-            m_bg = QColor(getStr(colors, "bg", m_bg.name()));
-            m_fg = QColor(getStr(colors, "fg", m_fg.name()));
-            m_accent = QColor(getStr(colors, "accent", m_accent.name()));
-            m_selected = QColor(getStr(colors, "selected", m_selected.name()));
-            m_muted = QColor(getStr(colors, "muted", m_muted.name()));
+        if (!QFile::exists(themePath)) {
+            qWarning() << "[Theme] Theme file not found:" << themePath;
+            qWarning() << "[Theme] You can find example themes in the source under examples/config/themes/";
+            return;
         }
 
-        if (auto layout = theme["layout"]) {
-            m_padding = getIntVal(layout, "padding", m_padding);
-            m_rowHeight = getIntVal(layout, "rowHeight", m_rowHeight);
-            m_fontSize = getIntVal(layout, "fontSize", m_fontSize);
-            m_secondaryFontSize = getIntVal(layout, "secondaryFontSize", m_secondaryFontSize);
-            m_iconSize = getIntVal(layout, "iconSize", m_iconSize);
-            m_radius = getIntVal(layout, "radius", m_radius);
-            m_borderWidth = getIntVal(layout, "borderWidth", m_borderWidth);
-            
-            // Parse opacity (0.0 - 1.0)
-            if (layout["opacity"]) {
-                m_opacity = layout["opacity"].as<double>();
-                // Clamp to valid range
-                if (m_opacity < 0.0) m_opacity = 0.0;
-                if (m_opacity > 1.0) m_opacity = 1.0;
+        try {
+            YAML::Node theme = YAML::LoadFile(themePath.toStdString());
+            qDebug() << "Loading theme from:" << themePath;
+
+            if (auto colors = theme["colors"]) {
+                m_bg = QColor(getStr(colors, "bg", m_bg.name()));
+                m_fg = QColor(getStr(colors, "fg", m_fg.name()));
+                m_accent = QColor(getStr(colors, "accent", m_accent.name()));
+                m_selected = QColor(getStr(colors, "selected", m_selected.name()));
+                m_muted = QColor(getStr(colors, "muted", m_muted.name()));
             }
-        }
-        
-        if (auto window = theme["window"]) {
-            m_windowWidth = getIntVal(window, "width", m_windowWidth);
-            m_windowHeight = getIntVal(window, "height", m_windowHeight);
-            m_windowMargin = getIntVal(window, "margin", m_windowMargin);
-            m_windowAnchor = getStr(window, "anchor", m_windowAnchor);
+
+            if (auto layout = theme["layout"]) {
+                m_padding = getIntVal(layout, "padding", m_padding);
+                m_rowHeight = getIntVal(layout, "rowHeight", m_rowHeight);
+                m_fontSize = getIntVal(layout, "fontSize", m_fontSize);
+                m_secondaryFontSize = getIntVal(layout, "secondaryFontSize", m_secondaryFontSize);
+                m_iconSize = getIntVal(layout, "iconSize", m_iconSize);
+                m_radius = getIntVal(layout, "radius", m_radius);
+                m_borderWidth = getIntVal(layout, "borderWidth", m_borderWidth);
+                
+                // Parse opacity (0.0 - 1.0)
+                if (layout["opacity"]) {
+                    m_opacity = layout["opacity"].as<double>();
+                    // Clamp to valid range
+                    if (m_opacity < 0.0) m_opacity = 0.0;
+                    if (m_opacity > 1.0) m_opacity = 1.0;
+                }
+            }
             
-            QString layer = getStr(window, "layer", "top");
-            if (layer == "overlay") m_windowLayer = 2; // LayerOverlay
-            else m_windowLayer = 1; // LayerTop
+            if (auto window = theme["window"]) {
+                m_windowWidth = getIntVal(window, "width", m_windowWidth);
+                m_windowHeight = getIntVal(window, "height", m_windowHeight);
+                m_windowMargin = getIntVal(window, "margin", m_windowMargin);
+                m_windowAnchor = getStr(window, "anchor", m_windowAnchor);
+                
+                QString layer = getStr(window, "layer", "top");
+                if (layer == "overlay") m_windowLayer = 2; // LayerOverlay
+                else m_windowLayer = 1; // LayerTop
+            }
+            
+        } catch (const YAML::Exception& e) {
+            qWarning() << "Failed to parse theme file:" << e.what();
+        } catch (...) {
+            qWarning() << "Unknown error loading theme:" << themePath;
         }
-
-        // emit themeChanged(); // Deferred to end of function
-        
-    } catch (const YAML::Exception& e) {
-        qWarning() << "Failed to parse theme file:" << e.what();
-    } catch (...) {
-        qWarning() << "Unknown error loading theme:" << themePath;
     }
-
 
     // Priority 0: Global Config Overrides
     // Always apply these on top of whatever theme was loaded
@@ -182,7 +180,6 @@ void Theme::load(const QString& themeName)
     
     // Window size overrides
     qInfo() << "Checking config for window overrides...";
-
 
     m_windowWidth = c.getInt("window.width", m_windowWidth);
     m_windowHeight = c.getInt("window.height", m_windowHeight);

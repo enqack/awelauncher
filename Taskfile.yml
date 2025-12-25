@@ -60,6 +60,16 @@ tasks:
     cmds:
       - nix develop -c bash -c "task build && exec bash"
 
+  bump:
+    desc: Bump patch version
+    cmds:
+      - ./tools/bump_version.sh --bump
+
+  version:
+    desc: Check current version status
+    cmds:
+      - ./tools/bump_version.sh --check
+
   format:
     desc: Format code (if clang-format available)
     cmds:

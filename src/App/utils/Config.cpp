@@ -81,6 +81,7 @@ void Config::load(const QString& configPath)
     
     validateKeys();
 }
+    
 
 void Config::validateKeys() {
     qInfo() << "Validating config keys...";
@@ -114,35 +115,26 @@ void Config::validateKeys() {
     }
 }
 
-// Use const YAML::Node& to prevent autovivification
-static YAML::Node resolve(const YAML::Node& node, const QString& key) {
-    if (!node.IsDefined()) {
-        qWarning() << "Resolve called with undefined node for key:" << key;
-        return YAML::Node();
-    }
-    if (node.IsNull()) {
-        qWarning() << "Resolve called with null node for key:" << key;
-        return YAML::Node();
-    }
+// Use recursion to avoid handle mutation issues resulting from reassignment
+// (YAML::Node handles seem to share state in a way that iterative reassignment affects the original)
+static YAML::Node resolve(const YAML::Node& node, const QStringList& parts) {
+    if (!node.IsDefined() || node.IsNull()) return YAML::Node();
+    if (parts.isEmpty()) return node;
     
-    QStringList parts = key.split(".");
-    YAML::Node current = node; // Copy of handle, but checks will be const if we use const methods? 
-                               // Actually, in yaml-cpp, copying a const Node yields a Node that might be non-const if not careful?
-                               // No, we should keep 'current' as valid node.
-                               
-    // Iterate carefully
-    for (const QString& part : parts) {
-        std::string partStr = part.toStdString();
-        
-        if (!current.IsMap()) return YAML::Node();
-        
-        YAML::Node next = current[partStr];
-        if (!next.IsDefined()) {
-             return YAML::Node();
-        }
-        current = next;
-    }
-    return current;
+    QString part = parts.first();
+    std::string partStr = part.toStdString();
+    
+    if (!node.IsMap()) return YAML::Node();
+    
+    // Check if key exists (read-only)
+    YAML::Node next = node[partStr];
+    if (!next.IsDefined()) return YAML::Node();
+    
+    return resolve(next, parts.mid(1));
+}
+
+static YAML::Node resolve(const YAML::Node& node, const QString& key) {
+    return resolve(node, key.split("."));
 }
 
 QString Config::getString(const QString& key, const QString& defaultValue) const
@@ -163,14 +155,6 @@ QString Config::getString(const QString& key, const QString& defaultValue) const
 
 int Config::getInt(const QString& key, int defaultValue) const
 {
-    // Check overrides first
-    if (m_overrides.contains(key)) {
-        bool ok;
-        int val = m_overrides.value(key).toInt(&ok);
-        if (ok) return val;
-        qWarning() << "Override value for" << key << "is not an int:" << m_overrides.value(key);
-    }
-
     YAML::Node node = resolve(m_config, key);
     if (node.IsDefined() && !node.IsNull()) {
         try {
