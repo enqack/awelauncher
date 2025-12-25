@@ -29,7 +29,9 @@ void Config::ensureDefaults()
     ResFile files[] = {
         { ":/awelauncher/examples/config/config.yaml", "config.yaml" },
         { ":/awelauncher/examples/config/themes/default.yaml", "themes/default.yaml" },
-        { ":/awelauncher/examples/config/themes/catppuccin.yaml", "themes/catppuccin.yaml" }
+        { ":/awelauncher/examples/config/themes/catppuccin.yaml", "themes/catppuccin.yaml" },
+        { ":/awelauncher/examples/config/themes/test-red.yaml", "themes/test-red.yaml" },
+        { ":/awelauncher/examples/config/themes/test-blue.yaml", "themes/test-blue.yaml" }
     };
     
     for (const auto& f : files) {
@@ -150,15 +152,6 @@ QString Config::getString(const QString& key, const QString& defaultValue) const
         return m_overrides.value(key);
     }
 
-    // Sanity check: If we have a path but config root looks wrong (e.g. missing "general" or "window"), reload.
-    // This protects against weird yaml-cpp handle corruption.
-    if (!m_lastPath.isEmpty() && m_config.IsMap()) {
-        if (!m_config["general"] && !m_config["window"]) {
-             qDebug() << "Config self-healing: Reloading from" << m_lastPath;
-             const_cast<Config*>(this)->load(m_lastPath);
-        }
-    }
-
     YAML::Node node = resolve(m_config, key);
     if (node.IsDefined() && !node.IsNull()) {
         try {
@@ -178,18 +171,25 @@ int Config::getInt(const QString& key, int defaultValue) const
         qWarning() << "Override value for" << key << "is not an int:" << m_overrides.value(key);
     }
 
-    // Sanity check: If we have a path but config root looks wrong (e.g. missing "general" or "window"), reload.
-    if (!m_lastPath.isEmpty() && m_config.IsMap()) {
-        if (!m_config["general"] && !m_config["window"]) {
-             qDebug() << "Config self-healing: Reloading from" << m_lastPath;
-             const_cast<Config*>(this)->load(m_lastPath);
-        }
+    YAML::Node node = resolve(m_config, key);
+    if (node.IsDefined() && !node.IsNull()) {
+        try {
+            return node.as<int>();
+        } catch (...) { }
+    }
+    return defaultValue;
+}
+
+QColor Config::getColor(const QString& key, const QColor& defaultValue) const
+{
+    if (m_overrides.contains(key)) {
+        return QColor(m_overrides.value(key));
     }
 
     YAML::Node node = resolve(m_config, key);
     if (node.IsDefined() && !node.IsNull()) {
         try {
-            return node.as<int>();
+            return QColor(QString::fromStdString(node.as<std::string>()));
         } catch (...) { }
     }
     return defaultValue;

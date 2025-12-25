@@ -44,6 +44,17 @@ tasks:
     cmds:
       - sudo cmake --install build
 
+  docs:
+    desc: Generate Doxygen documentation
+    cmds:
+      - doxygen Doxyfile
+
+  test:
+    desc: Run unit tests
+    cmds:
+      - cmake --build build --target test_fuzzy
+      - cd build && ctest --output-on-failure
+
   dev:
     desc: Enter nix dev shell and build
     cmds:

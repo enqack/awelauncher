@@ -66,7 +66,7 @@ Window {
     }
     */
 
-    color: AppTheme.bg
+    color: "transparent"
     
     opacity: AppTheme.opacity
     
@@ -79,7 +79,7 @@ Window {
     Component.onCompleted: {
         // Immediate attempt
         root.requestActivate()
-        searchInput.forceActiveFocus()
+        searchBar.forceInputFocus()
         
         // Delayed attempt to ensure focus after mapping
         focusTimer.start()
@@ -92,127 +92,63 @@ Window {
         onTriggered: {
             if (debugMode) console.log("Retrying focus...")
             root.requestActivate()
-            searchInput.forceActiveFocus()
+            searchBar.forceInputFocus()
             root.raise()
         }
     }
     
     property bool showHelp: false
     
-    ColumnLayout {
+    // Main Background
+    Rectangle {
         anchors.fill: parent
-        anchors.margins: AppTheme.padding
-        spacing: 16
+        color: AppTheme.bg
+        radius: AppTheme.radius
+        border.color: AppTheme.border
+        border.width: AppTheme.borderWidth
+        
+        ColumnLayout {
+            anchors.fill: parent
+            anchors.margins: AppTheme.padding
+            spacing: AppTheme.padding
 
-            // Header / Search
-            Rectangle {
-                Layout.fillWidth: true
-                height: AppTheme.rowHeight
-                color: Qt.lighter(AppTheme.bg, 1.2)
-                radius: 8
-                
-                RowLayout {
-                    anchors.fill: parent
-                    anchors.margins: 12
-                    spacing: 10
+                // Header / Search
+                SearchBar {
+                    id: searchBar
                     
-                    Text { 
-                        text: "" // Nerd font icon or just search
-                        color: AppTheme.muted ? AppTheme.muted : "#888" 
-                        font.pixelSize: AppTheme.fontSize
-                    }
-
-                    // Search Input
-                    Item {
-                        Layout.fillWidth: true
-                        Layout.fillHeight: true
-
-                        Text {
-                            anchors.fill: parent
-                            verticalAlignment: Text.AlignVCenter
-                            text: (Controller && Controller.promptOverride && Controller.promptOverride !== "") ? Controller.promptOverride : cliPrompt
-                            color: AppTheme.muted
-                            font.pixelSize: AppTheme.fontSize
-                            visible: searchInput.text === ""
-                        }
-
-                        TextInput {
-                            id: searchInput
-                            anchors.fill: parent
-                            verticalAlignment: TextInput.AlignVCenter
-                            font.pixelSize: AppTheme.fontSize
-                            color: AppTheme.fg
-                            focus: true
-                            selectByMouse: true
-                            
-                            onTextChanged: {
-                                Controller.filter(text)
-                                resultsList.currentIndex = 0
-                            }
-                            
-                            Keys.onPressed: (event) => {
-                                if (event.key === Qt.Key_Escape) {
-                                    root.close()
-                                } else if (event.key === Qt.Key_Down) {
-                                    resultsList.currentIndex = Math.min(resultsList.count - 1, resultsList.currentIndex + 1)
-                                    event.accepted = true
-                                } else if (event.key === Qt.Key_Up) {
-                                    resultsList.currentIndex = Math.max(0, resultsList.currentIndex - 1)
-                                    event.accepted = true
-                                } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
-                                    Controller.activate(resultsList.currentIndex)
-                                    event.accepted = true
-                                }
-                            }
-                            
-                            Connections {
-                                target: Controller
-                                function onClearSearch() {
-                                    searchInput.text = ""
-                                }
-                            }
-                        }
+                    onCloseRequested: root.close()
+                    onNavigateDown: resultsList.currentIndex = Math.min(resultsList.count - 1, resultsList.currentIndex + 1)
+                    onNavigateUp: resultsList.currentIndex = Math.max(0, resultsList.currentIndex - 1)
+                    onActivateCurrent: Controller.activate(resultsList.currentIndex)
+                    onSearchChanged: (text) => {
+                         resultsList.currentIndex = 0
                     }
                 }
-            }
 
-            // Results
-            ListView {
-                id: resultsList
-                Layout.fillWidth: true
-                Layout.fillHeight: true
-                clip: true
-                model: LauncherModel
-                
-                delegate: ResultRow {
-                    width: ListView.view.width
+                // Results
+                ListView {
+                    id: resultsList
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    clip: true
+                    model: LauncherModel
+                    
+                    delegate: ResultRow {
+                        width: ListView.view.width
+                    }
+                    
+                    highlight: Rectangle {
+                        color: AppTheme.selected
+                        radius: AppTheme.radius
+                    }
+                    highlightMoveDuration: 100
+                    spacing: AppTheme.padding / 4
                 }
                 
-                highlight: Rectangle {
-                    color: AppTheme.selected
-                    radius: 8
-                }
-                highlightMoveDuration: 100
-                spacing: 4
-            }
-            
-            // Footer
-            RowLayout {
-                Layout.fillWidth: true
-                Text {
-                    text: resultsList.count + " results"
-                    color: Qt.darker(AppTheme.fg, 1.5)
-                    font.pixelSize: AppTheme.fontSize * 0.7
-                    Layout.preferredWidth: implicitWidth 
-                }
-                Item { Layout.fillWidth: true }
-                Text {
-                    Layout.maximumWidth: AppTheme.windowWidth * 0.6
-                    text: cliShowMode === "window" ? "Ctrl+H for help" : "Enter to select • Esc to close"
-                    color: Qt.darker(AppTheme.fg, 1.5)
-                    font.pixelSize: AppTheme.fontSize * 0.7
-                    elide: Text.ElideRight
-                    horizontalAlignment: Text.AlignRight
+                // Footer
+                Footer {
+                   resultCount: resultsList.count
+                   showMode: cliShowMode
                 }
             }
         }
@@ -228,93 +164,10 @@ Window {
     }
     
     // Help overlay
-    Rectangle {
-        anchors.fill: parent
+    HelpOverlay {
         visible: showHelp
-        color: Qt.rgba(0, 0, 0, 0.9)
-        radius: AppTheme.radius
-        
-        MouseArea {
-            anchors.fill: parent
-            onClicked: showHelp = false
-        }
-        
-        ColumnLayout {
-            anchors.centerIn: parent
-            spacing: 20
-            
-            Text {
-                text: "Keybindings"
-                color: AppTheme.accent
-                font.pixelSize: AppTheme.fontSize * 1.5
-                font.bold: true
-                Layout.alignment: Qt.AlignHCenter
-            }
-            
-            ColumnLayout {
-                spacing: 8
-                visible: cliShowMode === "window"
-                
-                Text {
-                    text: "Enter - Switch to window"
-                    color: AppTheme.fg
-                    font.pixelSize: AppTheme.fontSize
-                }
-                Text {
-                    text: "Ctrl+D - Close window"
-                    color: AppTheme.fg
-                    font.pixelSize: AppTheme.fontSize
-                }
-                Text {
-                    text: "Ctrl+F - Toggle fullscreen"
-                    color: AppTheme.fg
-                    font.pixelSize: AppTheme.fontSize
-                }
-                Text {
-                    text: "Ctrl+X - Toggle maximize"
-                    color: AppTheme.fg
-                    font.pixelSize: AppTheme.fontSize
-                }
-                Text {
-                    text: "Ctrl+N - Toggle minimize"
-                    color: AppTheme.fg
-                    font.pixelSize: AppTheme.fontSize
-                }
-                Text {
-                    text: "Ctrl+M - Move to monitor (select window first)"
-                    color: AppTheme.fg
-                    font.pixelSize: AppTheme.fontSize
-                }
-            }
-            
-            ColumnLayout {
-                spacing: 8
-                
-                Text {
-                    text: "↑/↓ - Navigate results"
-                    color: AppTheme.fg
-                    font.pixelSize: AppTheme.fontSize
-                }
-                Text {
-                    text: "Esc - Close launcher"
-                    color: AppTheme.fg
-                    font.pixelSize: AppTheme.fontSize
-                }
-                Text {
-                    text: "Ctrl+H - Toggle this help"
-                    color: AppTheme.fg
-                    font.pixelSize: AppTheme.fontSize
-                }
-            }
-            
-            Text {
-                text: "Press Esc or click anywhere to close"
-                color: Qt.darker(AppTheme.fg, 1.5)
-                font.pixelSize: AppTheme.fontSize * 0.8
-                Layout.alignment: Qt.AlignHCenter
-                Layout.topMargin: 20
-            }
-        }
+        showMode: cliShowMode
+        onCloseRequested: showHelp = false
     }
 
 

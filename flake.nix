@@ -67,6 +67,7 @@
               ninja
               qt6.wrapQtAppsHook
               go-task
+              doxygen
             ];
 
             buildInputs = with pkgs; [

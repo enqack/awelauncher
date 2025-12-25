@@ -71,6 +71,7 @@ __pycache__/
 # Documentation build artifacts
 docs/_build/
 docs/.buildinfo
+docs/html/
 
 # Package artifacts
 *.tar.gz

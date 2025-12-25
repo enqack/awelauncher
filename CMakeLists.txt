@@ -32,6 +32,8 @@ add_executable(awelaunch
     src/App/models/LauncherModel.h
     src/App/utils/Theme.cpp
     src/App/utils/Theme.h
+    src/App/utils/ThemeScanner.cpp
+    src/App/utils/ThemeScanner.h
     src/App/utils/Config.cpp
     src/App/utils/Config.h
     src/App/providers/IconProvider.cpp
@@ -120,6 +122,9 @@ qt_add_qml_module(awelaunch
     QML_FILES
         src/qml/LauncherRoot.qml
         src/qml/ResultRow.qml
+        src/qml/SearchBar.qml
+        src/qml/Footer.qml
+        src/qml/HelpOverlay.qml
     RESOURCES
         examples/config/config.yaml
         examples/config/themes/default.yaml
@@ -127,3 +132,10 @@ qt_add_qml_module(awelaunch
 )
 
 install(TARGETS awelaunch DESTINATION bin)
+
+# Testing
+option(BUILD_TESTING "Build tests" ON)
+if(BUILD_TESTING)
+    enable_testing()
+    add_subdirectory(tests)
+endif()

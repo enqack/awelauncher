@@ -10,9 +10,9 @@ Item {
     
     RowLayout {
         anchors.fill: parent
-        anchors.leftMargin: 10
-        anchors.rightMargin: 10
-        spacing: 12
+        anchors.leftMargin: AppTheme.padding / 2
+        anchors.rightMargin: AppTheme.padding / 2
+        spacing: AppTheme.padding / 2
         
         Image {
             id: icon
@@ -26,7 +26,7 @@ Item {
         
         ColumnLayout {
             Layout.fillWidth: true
-            spacing: 2
+            spacing: AppTheme.padding / 8
             
             Text {
                 function highlightMatches(text, positions) {
@@ -58,7 +58,7 @@ Item {
             Text {
                 text: model.secondary
                 color: Qt.darker(AppTheme.fg, 1.3)
-                font.pixelSize: AppTheme.fontSize * 0.8
+                font.pixelSize: AppTheme.secondaryFontSize
                 elide: Text.ElideRight
                 Layout.fillWidth: true
                 visible: text !== ""

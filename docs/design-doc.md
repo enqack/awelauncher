@@ -1,45 +1,34 @@
-## awelauncher — QtQuick Wayland Launcher (Design Spec v0.2.0-draft)
+## awelauncher — QtQuick Wayland Launcher (Design Spec v0.3.1)
 
 ### Mission
 
 A wofi-simple launcher with **Qt-grade sizing/styling/icons**, implemented with **QtQuick only**, Wayland-first, deterministic, fast.
 
-### Implementation Status (v0.1 - Complete)
+### Implementation Status (v0.3 - Complete)
 
 **✅ Fully Implemented:**
-- CLI contract (all flags working)
-- QML boundary (LauncherRoot, ResultRow, Controller, Model, Theme)
-- Icon pipeline (async + disk cache)
-- Providers: drun (desktop apps), run (PATH executables), **window (Wayland window switcher)**
-- Fuzzy matching with visual highlighting
-- MRU boost scoring
-- Theme system (YAML + base16 support)
-- Config system (YAML)
-- Performance: 76ms cold start (exceeds < 50ms warm target)
-- Esc to dismiss
-- Extended theme tokens
-- **Window management**: activate, close, fullscreen, maximize, minimize
-- **Taskfile build automation**
+- **CLI/Metadata**: unified versioning (`VERSION` file), `--version` flag, and config/theme overrides.
+- **QML boundary**: LauncherRoot, ResultRow, Controller, Model, Theme (QtQuick only).
+- **Icon pipeline**: async loading + placeholder + disk caching.
+- **Providers**: 
+  - **drun**: desktop apps (XDG parsed).
+  - **run**: PATH executables.
+  - **window**: window switcher with activation, actions (close, fullscreen, etc.).
+  - **dmenu**: stdin/stdout pipe mode.
+- **Monitor Selection**: secondary selection flow (`Ctrl+M`) to move windows between outputs.
+- **Advanced Positioning**: anchoring (top/bottom/left/right/center), margins, and CLI geometry overrides.
+- **Matching**: fuzzy with visual highlighting + MRU boost scoring.
+- **Build System**: generator-agnostic Taskfile + Nix flake integration.
+- **Interaction**: Esc to dismiss, help overlay (`Ctrl+H`).
 
 **⏭️ Deferred:**
-- Multi-monitor window move (needs output tracking)
-- Prefix/substring matching modes (fuzzy covers most use cases)
-- Multiple actions per item
+- Multiple actions per item menu.
+- Prefix/substring matching modes (fuzzy covers most use cases).
 
-**🚧 Planned (v0.2.0):**
-- **dmenu Compliance**:
-  - Read items from stdin (pipe)
-  - Print selected item to stdout
-  - Compatibility with dmenu scripts
-- **Advanced Window Positioning**:
-  - Anchoring (top, bottom, left, right, center)
-  - Configurable margins/offsets
-  - CLI overrides for geometry (`--width`, `--height`, `--anchor`)
-- **Monitor Selection UI**:
-  - Visual picker for `moveToOutput` action
-  - Explicit target monitor selection
-- **CLI Config Overrides**:
-  - Allow forcing config values via command line flags
+**🚧 Planned (v0.4.0):**
+- **Modern Protocol Support**: Implement `ext-foreign-toplevel-list-v1` as primary with `wlr` fallback.
+- **Plugin System**: External provider support.
+- **Workspace movement** (requires protocol support).
 
 **🔮 Future (v0.3+):**
 - **Workspace movement** (requires protocol support)
@@ -64,14 +53,16 @@ A wofi-simple launcher with **Qt-grade sizing/styling/icons**, implemented with 
 
 ---
 
-## CLI contract (MVP)
+## CLI contract (Stable)
 
 * `awelaunch --show drun|run|window|dmenu`
+* `awelaunch --version`
 * `awelaunch --theme <name>`
 * `awelaunch --prompt "…"`
 * `awelaunch --dmenu` (alias for `--show dmenu`)
 * `awelaunch --width <int> --height <int>`
 * `awelaunch --anchor <center|top|bottom|left|right>`
+* `awelaunch --margin <int>`
 * `awelaunch --debug`
 
 Design intent: the CLI is *stable and scriptable*, not a dumping ground.
@@ -172,14 +163,13 @@ This is one of the secret ingredients that makes it feel “native”.
 * **window**: Wayland foreign-toplevel ✅ (wlr-foreign-toplevel-management-unstable-v1)
   - Enumerates all toplevel windows
   - Window actions: activate, close, fullscreen, maximize, minimize
-  - Tracks window state (title, app_id, state flags)
-  - Requires wl_seat for activation
-  - Tested on Niri (wlroots-based compositor)
-* **dmenu**: stdin provider 🚧
-  - Reads lines from stdin
-  - Filters based on input
-  - Prints selected line to stdout on exit
-  - No icons by default (unless parsed from specific dmenu extensions, TBD)
+  - **Monitor Selection**: `Ctrl+M` triggers a secondary list of outputs to move the window.
+  - State tracking: title, app_id, state flags.
+  - Tested on Niri, Sway, and Hyprland.
+* **dmenu**: stdin provider ✅
+  - Reads lines from stdin.
+  - Filters based on input.
+  - Prints selection to stdout.
 
 ---
 

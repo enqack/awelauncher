@@ -1,8 +1,30 @@
+/**
+ * @file main.cpp
+ * @brief Entry point for awelauncher.
+ * 
+ * This file handles the application initialization, command-line argument parsing,
+ * and setting up the QML engine with necessary context properties.
+ * 
+ * @section CLI Command Line Interface
+ * awelauncher supports the following command-line options:
+ * - @c --show, @c -s : Select provider mode (@c drun, @c run, @c window).
+ * - @c --theme, @c -t : Specify the theme name to load.
+ * - @c --prompt, @c -p : Custom prompt text.
+ * - @c --width : Override window width in pixels.
+ * - @c --height : Override window height in pixels.
+ * - @c --anchor, @c -a : Set window anchoring (center, top, etc.).
+ * - @c --margin, @c -m : Set window margin from anchor point.
+ * - @c --dmenu, @c -d : Run in dmenu compatibility mode.
+ * - @c --overlay : Force the window to the overlay layer.
+ * - @c --debug, @c -g : Enable verbose debug logging.
+ * - @c --version : Display version information.
+ * - @c --help : Display help message.
+ */
+
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
 #include <QtQml>
-#include <QCommandLineParser>
 #include <QCommandLineParser>
 #include <QElapsedTimer>
 #include <QSurfaceFormat>

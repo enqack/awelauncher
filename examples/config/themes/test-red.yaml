@@ -1,0 +1,20 @@
+colors:
+  bg: "#ff0000"     # BRIGHT RED
+  fg: "#00ff00"     # BRIGHT GREEN
+  accent: "#ffff00" # BRIGHT YELLOW
+  selected: "#0000ff" # BRIGHT BLUE
+  muted: "#ffffff"  # WHITE
+  hover: "#ff00ff"
+  border: "#00ffff"
+
+layout:
+  radius: 0
+  padding: 40
+  rowHeight: 80
+  fontSize: 24
+  iconSize: 64
+  opacity: 1.0
+
+window:
+  width: 800
+  height: 600

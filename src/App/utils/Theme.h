@@ -3,6 +3,14 @@
 #include <QObject>
 #include <QColor>
 
+/**
+ * @class Theme
+ * @brief Manages the visual appearance and layout metrics of the application.
+ * 
+ * Registered as a QML singleton @c AppTheme. It handles loading themes from
+ * YAML files, Base16 environment variables, and applying global configuration 
+ * overrides.
+ */
 class Theme : public QObject
 {
     Q_OBJECT
@@ -34,9 +42,21 @@ public:
     explicit Theme(QObject *parent = nullptr);
 
 
+    /**
+     * @brief Loads a theme by name.
+     * 
+     * The loading priority is:
+     * 1. Base16 environment (if name is "auto" or empty)
+     * 2. YAML file in @c ~/.config/awelauncher/themes/`name`.yaml
+     * 3. Built-in hardcoded defaults
+     * 
+     * Finally, global @c Config overrides are applied on top.
+     */
     void load(const QString& themeName);
     
     friend bool loadFromBase16(Theme* theme);
+    friend class ThemeScanner;
+    
 
     QColor bg() const { return m_bg; }
     QColor fg() const { return m_fg; }

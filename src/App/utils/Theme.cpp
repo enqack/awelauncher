@@ -1,5 +1,6 @@
 #include "Theme.h"
 #include "Config.h"
+#include "ThemeScanner.h"
 #include <QStandardPaths>
 #include <QFile>
 #include <QDebug>
@@ -56,16 +57,41 @@ bool loadFromBase16(Theme* theme) {
     return true;
 }
 
-
 void Theme::load(const QString& themeName)
 {
     // Priority 1: Try base16 environment variables (system theme)
     if (themeName == "auto" || themeName == "system" || themeName.isEmpty()) {
         if (loadFromBase16(this)) {
+            qInfo() << "Loaded theme from env vars";
             emit themeChanged();
             return;
         }
-        qDebug() << "Base16 env vars not found, falling back to default theme";
+        
+        if (ThemeScanner::tryLoadFromBase16File(this)) {
+             qInfo() << "Loaded theme from ~/.base16_theme";
+             emit themeChanged();
+             return;
+        }
+        
+        if (ThemeScanner::tryLoadFromWezTerm(this)) {
+             qInfo() << "Loaded theme from WezTerm config";
+             emit themeChanged();
+             return;
+        }
+
+        if (ThemeScanner::tryLoadFromKitty(this)) {
+             qInfo() << "Loaded theme from Kitty config";
+             emit themeChanged();
+             return;
+        }
+        
+       if (ThemeScanner::tryLoadFromAlacritty(this)) {
+             qInfo() << "Loaded theme from Alacritty config";
+             emit themeChanged();
+             return;
+        }
+        
+        qDebug() << "Auto-detection failed, falling back to default theme";
         // Fall back to default theme instead of looking for "auto.yaml"
         load("default");
         return;
@@ -76,7 +102,8 @@ void Theme::load(const QString& themeName)
     QString themePath = configDir + "/awelauncher/themes/" + themeName + ".yaml";
 
     if (!QFile::exists(themePath)) {
-        qWarning() << "Theme file not found:" << themePath << "- keeping defaults";
+        qWarning() << "[Theme] Theme file not found:" << themePath;
+        qWarning() << "[Theme] You can find example themes in the source under examples/config/themes/";
         return;
     }
 
@@ -96,8 +123,10 @@ void Theme::load(const QString& themeName)
             m_padding = getIntVal(layout, "padding", m_padding);
             m_rowHeight = getIntVal(layout, "rowHeight", m_rowHeight);
             m_fontSize = getIntVal(layout, "fontSize", m_fontSize);
+            m_secondaryFontSize = getIntVal(layout, "secondaryFontSize", m_secondaryFontSize);
             m_iconSize = getIntVal(layout, "iconSize", m_iconSize);
             m_radius = getIntVal(layout, "radius", m_radius);
+            m_borderWidth = getIntVal(layout, "borderWidth", m_borderWidth);
             
             // Parse opacity (0.0 - 1.0)
             if (layout["opacity"]) {
@@ -112,6 +141,7 @@ void Theme::load(const QString& themeName)
             m_windowWidth = getIntVal(window, "width", m_windowWidth);
             m_windowHeight = getIntVal(window, "height", m_windowHeight);
             m_windowMargin = getIntVal(window, "margin", m_windowMargin);
+            m_windowAnchor = getStr(window, "anchor", m_windowAnchor);
             
             QString layer = getStr(window, "layer", "top");
             if (layer == "overlay") m_windowLayer = 2; // LayerOverlay
@@ -141,6 +171,13 @@ void Theme::load(const QString& themeName)
     // Let's assume valid range if provided.
     // For now, let's just stick to integer overrides or add getDouble to Config if needed.
     // Wait, Config doesn't have getDouble. Let's add it or rely on int/string parsing.
+    // Colors overrides
+    m_bg = c.getColor("colors.bg", m_bg);
+    m_fg = c.getColor("colors.fg", m_fg);
+    m_accent = c.getColor("colors.accent", m_accent);
+    m_selected = c.getColor("colors.selected", m_selected);
+    m_muted = c.getColor("colors.muted", m_muted);
+
     // Simpler: Just override metrics for now.
     
     // Window size overrides
@@ -159,6 +196,7 @@ void Theme::load(const QString& themeName)
     }
     
     qInfo() << "Final Window Size:" << m_windowWidth << "x" << m_windowHeight << "Anchor:" << m_windowAnchor << "Margin:" << m_windowMargin << "Layer:" << (m_windowLayer == 2 ? "Overlay" : "Top");
+    qInfo() << "[Theme] Final Colors - bg:" << m_bg.name() << "fg:" << m_fg.name() << "accent:" << m_accent.name() << "selected:" << m_selected.name();
 
     emit themeChanged();
 }

@@ -1,0 +1,14 @@
+# Doxyfile for awelauncher
+PROJECT_NAME           = "awelauncher"
+PROJECT_NUMBER         = "${APP_VERSION}"
+OUTPUT_DIRECTORY       = docs
+INPUT                  = src README.md
+RECURSIVE              = YES
+USE_MDFILE_AS_MAINPAGE = README.md
+GENERATE_LATEX         = NO
+GENERATE_HTML          = YES
+HTML_OUTPUT            = html
+EXTRACT_ALL            = YES
+EXTRACT_PRIVATE        = YES
+EXTRACT_STATIC         = YES
+FILE_PATTERNS          = *.cpp *.h *.qml *.md

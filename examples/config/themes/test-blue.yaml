@@ -1,0 +1,21 @@
+# High-contrast test theme
+colors:
+  bg: "#0000ff"      # Bright Blue
+  fg: "#ffffff"      # White
+  accent: "#00ff00"  # Green
+  selected: "#ffff00" # Yellow
+  muted: "#cccccc"
+  hover: "#00ffff"
+  border: "#ffffff"
+
+layout:
+  radius: 0
+  padding: 30
+  rowHeight: 60
+  fontSize: 20
+  iconSize: 40
+  opacity: 1.0
+
+window:
+  width: 800
+  height: 600
