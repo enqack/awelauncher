@@ -3,13 +3,17 @@
 #include <QQmlContext>
 #include <QtQml>
 #include <QCommandLineParser>
+#include <QCommandLineParser>
 #include <QElapsedTimer>
+#include <QSurfaceFormat>
 #include "App/controllers/LauncherController.h"
 #include "App/models/LauncherModel.h"
 #include "App/utils/Theme.h"
 #include "App/providers/IconProvider.h"
 #include "App/providers/DesktopFileLoader.h"
 #include "App/providers/WindowProvider.h"
+#include "App/providers/StdinProvider.h"
+
 
 #include <QStandardPaths>
 #include <QDir>
@@ -21,9 +25,34 @@
 #define PROFILE_POINT(name) \
     if (debugMode) qDebug() << "[PROFILE]" << name << ":" << timer.elapsed() << "ms";
 
+void personalMessageHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg)
+{
+    bool debug = Config::instance().isDebug();
+    
+    switch (type) {
+    case QtDebugMsg:
+    case QtInfoMsg:
+        if (debug) fprintf(stderr, "%s\n", qPrintable(msg));
+        break;
+    case QtWarningMsg:
+    case QtCriticalMsg:
+    case QtFatalMsg:
+        fprintf(stderr, "%s\n", qPrintable(msg));
+        if (type == QtFatalMsg) abort();
+        break;
+    }
+}
+
 int main(int argc, char *argv[])
 {
+    // Force Wayland Layer Shell integration
+    qputenv("QT_WAYLAND_SHELL_INTEGRATION", "layer-shell");
+    
     QGuiApplication app(argc, argv);
+    
+    QElapsedTimer timer;
+    timer.start();
+
     app.setApplicationName("awelauncher");
     app.setApplicationVersion(APP_VERSION);
     app.setOrganizationName("awelauncher");
@@ -48,7 +77,7 @@ int main(int argc, char *argv[])
         "Set custom prompt text", "text");
     parser.addOption(promptOption);
     
-    QCommandLineOption debugOption(QStringList() << "d" << "debug",
+    QCommandLineOption debugOption(QStringList() << "g" << "debug",
         "Enable debug output");
     parser.addOption(debugOption);
 
@@ -56,19 +85,43 @@ int main(int argc, char *argv[])
         "Clear icon cache on startup");
     parser.addOption(clearCacheOption);
     
+    // v0.2.0 Overrides
+    QCommandLineOption widthOption("width", "Override window width", "px");
+    parser.addOption(widthOption);
+    
+    QCommandLineOption heightOption("height", "Override window height", "px");
+    parser.addOption(heightOption);
+    
+    QCommandLineOption anchorOption({"a", "anchor"}, "Window anchor (center, top, bottom, left, right)", "anchor");
+    QCommandLineOption marginOption({"m", "margin"}, "Window anchor margin", "margin");
+    parser.addOption(anchorOption);
+    parser.addOption(marginOption);
+    
+    QCommandLineOption dmenuOption(QStringList() << "d" << "dmenu", "Run in dmenu mode (read stdin, print to stdout)");
+    parser.addOption(dmenuOption);
+
+    QCommandLineOption overlayOption("overlay", "Force window to use Overlay layer (ignore status bars)");
+    parser.addOption(overlayOption);
+
+    
     parser.process(app);
     
     // Start profiling timer
     bool debugMode = parser.isSet(debugOption);
-    QElapsedTimer timer;
-    timer.start();
+    Config::instance().setDebug(debugMode);
+    qInstallMessageHandler(personalMessageHandler);
+
+    if (debugMode) {
+        qDebug() << "[Diagnostics] Platform Name:" << app.platformName();
+        qDebug() << "[Diagnostics] QT_WAYLAND_SHELL_INTEGRATION:" << qgetenv("QT_WAYLAND_SHELL_INTEGRATION");
+    }
 
     if (parser.isSet(clearCacheOption)) {
         QString cacheDir = QStandardPaths::writableLocation(QStandardPaths::CacheLocation) + "/awelauncher/icons";
         QDir dir(cacheDir);
         if (dir.exists()) {
             dir.removeRecursively();
-            qDebug() << "Cleared icon cache:" << cacheDir;
+            if (debugMode) qDebug() << "Cleared icon cache:" << cacheDir;
         }
     }
     
@@ -78,6 +131,15 @@ int main(int argc, char *argv[])
     QString configPath = QStandardPaths::writableLocation(QStandardPaths::ConfigLocation) + "/awelauncher/config.yaml";
     Config::instance().ensureDefaults();
     Config::instance().load(configPath);
+    
+    // Apply CLI overrides
+    QMap<QString, QString> overrides;
+    if (parser.isSet(widthOption)) overrides["window.width"] = parser.value(widthOption);
+    if (parser.isSet(heightOption)) overrides["window.height"] = parser.value(heightOption);
+    if (parser.isSet(anchorOption)) overrides["window.anchor"] = parser.value(anchorOption);
+    if (parser.isSet(marginOption)) overrides["window.margin"] = parser.value(marginOption);
+    if (parser.isSet(overlayOption)) overrides["window.layer"] = "overlay";
+    Config::instance().setOverrides(overrides);
     
     PROFILE_POINT("Config loaded");
 
@@ -122,6 +184,7 @@ int main(int argc, char *argv[])
     
     engine.rootContext()->setContextProperty("cliShowMode", showMode);
     engine.rootContext()->setContextProperty("cliPrompt", promptText);
+    engine.rootContext()->setContextProperty("debugMode", debugMode);
     
     // Connect logic
     controller.setModel(&model);
@@ -163,14 +226,30 @@ int main(int argc, char *argv[])
             qWarning() << "Failed to initialize window provider";
             delete windowProvider;
         }
+    } else if (parser.isSet(dmenuOption)) {
+        // dmenu mode: read stdin
+        StdinProvider* stdinProvider = new StdinProvider(&app);
+        
+        QObject::connect(stdinProvider, &StdinProvider::itemsChanged, &model, [&model, stdinProvider](){
+            auto items = stdinProvider->getItems();
+            std::vector<LauncherItem> stdItems(items.begin(), items.end());
+            model.setItems(stdItems);
+        });
+        
+        stdinProvider->start();
+        
+        controller.setDmenuMode(true);
     } else {
         // Load desktop applications (drun mode)
-        model.setItems(DesktopFileLoader::scan());
+        auto items = DesktopFileLoader::scan();
+        qDebug() << "[Provider] Drun mode found" << items.size() << "items";
+        model.setItems(items);
     }
+
     
     PROFILE_POINT("Items loaded");
 
-    const QUrl url(u"qrc:/awelauncher/src/qml/LauncherRoot.qml"_qs);
+    const QUrl url(QStringLiteral(u"qrc:/awelauncher/src/qml/LauncherRoot.qml"));
     QObject::connect(&engine, &QQmlApplicationEngine::objectCreated,
                      &app, [url](QObject *obj, const QUrl &objUrl) {
         if (!obj && url == objUrl)

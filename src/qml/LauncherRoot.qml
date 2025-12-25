@@ -2,52 +2,107 @@ import QtQuick
 import QtQuick.Window
 import QtQuick.Layouts
 import awelauncher
+import org.kde.layershell as KWayland
 
 Window {
     id: root
+    visible: true
+    
+    // LayerShell properties
+    KWayland.Window.layer: AppTheme.windowLayer === 2 ? KWayland.Window.LayerOverlay : KWayland.Window.LayerTop
+    KWayland.Window.keyboardInteractivity: KWayland.Window.KeyboardInteractivityOnDemand
+    KWayland.Window.screenConfiguration: KWayland.Window.ScreenFromCompositor
+    KWayland.Window.exclusionZone: AppTheme.windowLayer === 2 ? -1 : 0
+    
+    KWayland.Window.anchors: {
+        var a = 0;
+        switch(AppTheme.windowAnchor) {
+            case "top": a |= KWayland.Window.AnchorTop; break;
+            case "bottom": a |= KWayland.Window.AnchorBottom; break;
+            case "left": a |= KWayland.Window.AnchorLeft; break;
+            case "right": a |= KWayland.Window.AnchorRight; break;
+            case "center": a = 0; break;
+            default: a |= KWayland.Window.AnchorTop;
+        }
+        return a;
+    }
+    
+    KWayland.Window.margins: ({
+        "top": (AppTheme.windowAnchor === "top" ? AppTheme.windowMargin : 0),
+        "bottom": (AppTheme.windowAnchor === "bottom" ? AppTheme.windowMargin : 0),
+        "left": (AppTheme.windowAnchor === "left" ? AppTheme.windowMargin : 0),
+        "right": (AppTheme.windowAnchor === "right" ? AppTheme.windowMargin : 0)
+    })
+
+    // Direct sizing
     width: AppTheme.windowWidth
     height: AppTheme.windowHeight
-    minimumWidth: AppTheme.windowWidth
-    maximumWidth: AppTheme.windowWidth
-    minimumHeight: AppTheme.windowHeight
-    maximumHeight: AppTheme.windowHeight
-    x: (Screen.width - width) / 2
-    y: (Screen.height - height) / 2
-    visible: true
-    title: "Awelauncher"
+    minimumWidth: width
+    maximumWidth: width
+    minimumHeight: height
+    maximumHeight: height
+    
+    // Direct anchoring (Managed by LayerShell now)
+    /*
+    x: {
+        switch(AppTheme.windowAnchor) {
+            case "top": return (Screen.width - width) / 2;
+            case "bottom": return (Screen.width - width) / 2;
+            case "left": return 0;
+            case "right": return Screen.width - width;
+            case "center": 
+            default: return (Screen.width - width) / 2;
+        }
+    }
+    y: {
+        switch(AppTheme.windowAnchor) {
+            case "top": return 0;
+            case "bottom": return Screen.height - height;
+            case "left": return (Screen.height - height) / 2;
+            case "right": return (Screen.height - height) / 2;
+            case "center":
+            default: return (Screen.height - height) / 2;
+        }
+    }
+    */
+
     color: AppTheme.bg
     
-    // Wayland: Qt.Dialog hint often forces floating mode in tiling/scrolling WMs.
-    // Wayland: Let WM handle decorations (no FramelessWindowHint)
-    flags: Qt.Window | Qt.WindowStaysOnTopHint
-
+    opacity: AppTheme.opacity
+    
     onActiveChanged: {
         if (!active) {
             Qt.quit()
         }
     }
-    
-    opacity: AppTheme.opacity
 
     Component.onCompleted: {
+        // Immediate attempt
         root.requestActivate()
+        searchInput.forceActiveFocus()
+        
+        // Delayed attempt to ensure focus after mapping
+        focusTimer.start()
+    }
+    
+    Timer {
+        id: focusTimer
+        interval: 100
+        repeat: false
+        onTriggered: {
+            if (debugMode) console.log("Retrying focus...")
+            root.requestActivate()
+            searchInput.forceActiveFocus()
+            root.raise()
+        }
     }
     
     property bool showHelp: false
     
-    
-    // Background wrapper for rounded corners on the whole window content
-    Rectangle {
-        id: bg
+    ColumnLayout {
         anchors.fill: parent
-        color: AppTheme.bg
-        radius: AppTheme.radius
-        // Removed manual border to rely on WM focus border
-
-        ColumnLayout {
-            anchors.fill: parent
-            anchors.margins: AppTheme.padding
-            spacing: 16
+        anchors.margins: AppTheme.padding
+        spacing: 16
 
             // Header / Search
             Rectangle {
@@ -114,12 +169,13 @@ Window {
                     text: resultsList.count + " results"
                     color: Qt.darker(AppTheme.fg, 1.5)
                     font.pixelSize: AppTheme.fontSize * 0.7
+                    Layout.preferredWidth: implicitWidth 
                 }
                 Item { Layout.fillWidth: true }
                 Text {
-                    Layout.fillWidth: true
-                    Layout.maximumWidth: parent.width * 0.6
+                    Layout.maximumWidth: AppTheme.windowWidth * 0.6
                     text: cliShowMode === "window" ? 
+
                           "Ctrl+H for help" :
                           "Enter to select • Esc to close"
                     color: Qt.darker(AppTheme.fg, 1.5)
@@ -129,6 +185,15 @@ Window {
                 }
             }
         }
+    
+    MouseArea { 
+        // Close if clicking outside the launcher in the transparent area
+        anchors.fill: parent
+        z: -1
+        onClicked: {
+            if (showHelp) showHelp = false;
+            else Qt.quit();
+        }
     }
     
     // Help overlay
@@ -136,6 +201,7 @@ Window {
         anchors.fill: parent
         visible: showHelp
         color: Qt.rgba(0, 0, 0, 0.9)
+        radius: AppTheme.radius
         
         MouseArea {
             anchors.fill: parent
@@ -219,6 +285,8 @@ Window {
             }
         }
     }
+
+
     
     // Close on Escape
     Shortcut {
@@ -266,11 +334,25 @@ Window {
         enabled: cliShowMode === "window"
         sequence: "Ctrl+M"
         onActivated: {
-            var outputs = Controller.getOutputs();
-            if (outputs.length > 1) {
-                // Cycle to next output (simple implementation)
-                Controller.moveWindowToOutput(resultsList.currentIndex, outputs[0]);
-            }
+            outputSelector.visible = true
+        }
+    }
+    
+    OutputSelector {
+        id: outputSelector
+        anchors.fill: parent
+        visible: false
+        z: 100
+        
+        onOutputSelected: (outputName) => {
+            Controller.moveWindowToOutput(resultsList.currentIndex, outputName)
+            visible = false
+        }
+        
+        onCancelled: {
+            visible = false
+            root.requestActivate() // Restore focus to main window
         }
     }
 }
+

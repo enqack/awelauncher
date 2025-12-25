@@ -9,8 +9,10 @@ A fast, minimal Wayland launcher built with Qt6 and QtQuick.
   - Desktop apps (drun)
   - Command runner (run)
   - Window switcher (window) - Wayland window management
-- **Window controls**: Switch, close, fullscreen, maximize, minimize
+- **Window controls**: Switch, close, fullscreen, maximize, minimize, move to monitor
+- **Dmenu compliance**: Scriptable input/output mode (-d)
 - **MRU boost**: Recently used apps/windows appear higher in results
+
 - **Icon caching**: Async loading with disk cache for instant startup
 - **Theming**: YAML-based themes + base16 system theme support
 - **Performance**: 76ms cold start, < 16ms search updates
@@ -76,8 +78,17 @@ awelaunch --show window
 # Use custom theme
 awelaunch --theme catppuccin
 
+# Use custom theme
+awelaunch --theme catppuccin
+
 # Enable debug output
-awelaunch --debug
+awelaunch -g
+
+# Override window geometry
+awelaunch --width 1000 --height 50 --anchor top
+
+# Dmenu mode (read stdin, print stdout)
+echo -e "Option A\nOption B" | awelaunch -d
 ```
 
 ### Keybindings
@@ -89,10 +100,12 @@ awelaunch --debug
 - Type to fuzzy search
 
 **Window mode only:**
+- `Ctrl+M` - Move window to another monitor
 - `Ctrl+D` - Close window
 - `Ctrl+F` - Toggle fullscreen
 - `Ctrl+X` - Toggle maximize
 - `Ctrl+N` - Toggle minimize
+
 
 ## Architecture
 

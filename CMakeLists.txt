@@ -14,6 +14,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(Qt6 REQUIRED COMPONENTS Quick Gui WaylandClient)
+find_package(LayerShellQt REQUIRED)
 find_package(yaml-cpp REQUIRED)
 
 set(CMAKE_AUTOMOC ON)
@@ -40,6 +41,8 @@ add_executable(awelaunch
     src/App/utils/FuzzyMatcher.h
     src/App/utils/MRUTracker.cpp
     src/App/utils/MRUTracker.h
+    src/App/providers/StdinProvider.cpp
+    src/App/providers/StdinProvider.h
 )
 
 target_include_directories(awelaunch PRIVATE src)
@@ -102,6 +105,7 @@ target_link_libraries(awelaunch
     Qt6::Quick
     Qt6::Gui
     Qt6::WaylandClient
+    LayerShellQt::Interface
     yaml-cpp
     wlr-foreign-toplevel-protocol
     ${WAYLAND_CLIENT_LIBRARIES}
@@ -113,6 +117,7 @@ qt_add_qml_module(awelaunch
     QML_FILES
         src/qml/LauncherRoot.qml
         src/qml/ResultRow.qml
+        src/qml/OutputSelector.qml
     RESOURCES
         examples/config/config.yaml
         examples/config/themes/default.yaml

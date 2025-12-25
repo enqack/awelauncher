@@ -26,9 +26,13 @@ class Theme : public QObject
     Q_PROPERTY(qreal opacity READ opacity NOTIFY themeChanged)
     Q_PROPERTY(int windowWidth READ windowWidth NOTIFY themeChanged)
     Q_PROPERTY(int windowHeight READ windowHeight NOTIFY themeChanged)
+    Q_PROPERTY(QString windowAnchor READ windowAnchor NOTIFY themeChanged)
+    Q_PROPERTY(int windowMargin READ windowMargin NOTIFY themeChanged)
+    Q_PROPERTY(int windowLayer READ windowLayer NOTIFY themeChanged)
 
 public:
     explicit Theme(QObject *parent = nullptr);
+
 
     void load(const QString& themeName);
     
@@ -52,6 +56,9 @@ public:
     qreal opacity() const { return m_opacity; }
     int windowWidth() const { return m_windowWidth; }
     int windowHeight() const { return m_windowHeight; }
+    QString windowAnchor() const { return m_windowAnchor; }
+    int windowMargin() const { return m_windowMargin; }
+    int windowLayer() const { return m_windowLayer; }
 
 signals:
     void themeChanged();
@@ -75,4 +82,7 @@ private:
     qreal m_opacity = 0.95;
     int m_windowWidth = 600;
     int m_windowHeight = 400;
+    QString m_windowAnchor = "center";
+    int m_windowMargin = 0;
+    int m_windowLayer = 1; // Default to LayerTop
 };

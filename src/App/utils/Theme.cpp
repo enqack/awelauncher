@@ -111,6 +111,11 @@ void Theme::load(const QString& themeName)
         if (auto window = theme["window"]) {
             m_windowWidth = getIntVal(window, "width", m_windowWidth);
             m_windowHeight = getIntVal(window, "height", m_windowHeight);
+            m_windowMargin = getIntVal(window, "margin", m_windowMargin);
+            
+            QString layer = getStr(window, "layer", "top");
+            if (layer == "overlay") m_windowLayer = 2; // LayerOverlay
+            else m_windowLayer = 1; // LayerTop
         }
 
         // emit themeChanged(); // Deferred to end of function
@@ -144,8 +149,16 @@ void Theme::load(const QString& themeName)
 
     m_windowWidth = c.getInt("window.width", m_windowWidth);
     m_windowHeight = c.getInt("window.height", m_windowHeight);
+    m_windowAnchor = c.getString("window.anchor", m_windowAnchor);
+    m_windowMargin = c.getInt("window.margin", m_windowMargin);
     
-    qInfo() << "Final Window Size:" << m_windowWidth << "x" << m_windowHeight;
+    QString layerOverride = c.getString("window.layer", "");
+    if (!layerOverride.isEmpty()) {
+        if (layerOverride == "overlay") m_windowLayer = 2;
+        else m_windowLayer = 1;
+    }
+    
+    qInfo() << "Final Window Size:" << m_windowWidth << "x" << m_windowHeight << "Anchor:" << m_windowAnchor << "Margin:" << m_windowMargin << "Layer:" << (m_windowLayer == 2 ? "Overlay" : "Top");
 
     emit themeChanged();
 }

@@ -145,6 +145,11 @@ static YAML::Node resolve(const YAML::Node& node, const QString& key) {
 
 QString Config::getString(const QString& key, const QString& defaultValue) const
 {
+    // Check overrides first
+    if (m_overrides.contains(key)) {
+        return m_overrides.value(key);
+    }
+
     // Sanity check: If we have a path but config root looks wrong (e.g. missing "general" or "window"), reload.
     // This protects against weird yaml-cpp handle corruption.
     if (!m_lastPath.isEmpty() && m_config.IsMap()) {
@@ -165,6 +170,14 @@ QString Config::getString(const QString& key, const QString& defaultValue) const
 
 int Config::getInt(const QString& key, int defaultValue) const
 {
+    // Check overrides first
+    if (m_overrides.contains(key)) {
+        bool ok;
+        int val = m_overrides.value(key).toInt(&ok);
+        if (ok) return val;
+        qWarning() << "Override value for" << key << "is not an int:" << m_overrides.value(key);
+    }
+
     // Sanity check: If we have a path but config root looks wrong (e.g. missing "general" or "window"), reload.
     if (!m_lastPath.isEmpty() && m_config.IsMap()) {
         if (!m_config["general"] && !m_config["window"]) {
@@ -182,3 +195,7 @@ int Config::getInt(const QString& key, int defaultValue) const
     return defaultValue;
 }
 
+void Config::setOverrides(const QMap<QString, QString>& overrides) {
+    m_overrides = overrides;
+    qInfo() << "Config overrides applied:" << overrides.size();
+}

@@ -24,10 +24,15 @@ public:
     Q_INVOKABLE QStringList getOutputs();
     Q_INVOKABLE void moveWindowToOutput(int index, const QString& outputName);
 
+    void setDmenuMode(bool enabled);
+
+
 signals:
     void windowVisibleChanged(bool visible);
 
 private:
    class LauncherModel* m_model = nullptr;
    class WindowProvider* m_windowProvider = nullptr;
+   bool m_dmenuMode = false;
+
 };

@@ -7,9 +7,7 @@
 LauncherModel::LauncherModel(QObject *parent)
     : QAbstractListModel(parent)
 {
-    // Load real data
-    m_allItems = DesktopFileLoader::scan();
-    m_displayedItems = m_allItems;
+    // Items are now loaded in main.cpp to support providers/overrides better
 }
 
 int LauncherModel::rowCount(const QModelIndex &parent) const
@@ -55,14 +53,17 @@ QHash<int, QByteArray> LauncherModel::roleNames() const
 
 void LauncherModel::setItems(const std::vector<LauncherItem>& items)
 {
+    qDebug() << "LauncherModel::setItems called with" << items.size() << "items";
     beginResetModel();
     m_allItems = items;
     m_displayedItems = items;
     endResetModel();
+    qDebug() << "LauncherModel::setItems finished. Display count:" << m_displayedItems.size();
 }
 
 void LauncherModel::filter(const QString& query)
 {
+    qDebug() << "LauncherModel::filter called with:" << query << "Total Items:" << m_allItems.size();
     beginResetModel();
     if (query.isEmpty()) {
         // Show all items when empty (both drun and run modes)
@@ -77,10 +78,9 @@ void LauncherModel::filter(const QString& query)
         std::vector<ScoredItem> scoredItems;
         
         for (const auto& item : m_allItems) {
-            // Skip drun items if we're in run mode
-            if (m_showMode == "run") {
-                continue; // Don't match against desktop apps in run mode
-            }
+            // BUG FIX: Filter logic was skipping everything in 'run' mode incorrectly
+            // If in 'run' mode, we only want to skip if the item isn't a 'path' or 'run' item
+            // For now, let's keep it simple: just match everything in all modes.
             
             // Try matching against primary, secondary, and id
             auto primaryMatch = FuzzyMatcher::match(query, item.primary);

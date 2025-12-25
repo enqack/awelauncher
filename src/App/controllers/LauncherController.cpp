@@ -24,6 +24,12 @@ void LauncherController::setWindowProvider(WindowProvider* provider)
     m_windowProvider = provider;
 }
 
+void LauncherController::setDmenuMode(bool enabled)
+{
+    m_dmenuMode = enabled;
+}
+
+
 void LauncherController::filter(const QString &text)
 {
     if (m_model) {
@@ -41,6 +47,16 @@ void LauncherController::activate(int index)
 
     QString itemId = m_model->data(modelIndex, LauncherModel::IdRole).toString();
     QString exec = m_model->data(modelIndex, LauncherModel::ExecRole).toString();
+    QString primary = m_model->data(modelIndex, LauncherModel::PrimaryRole).toString();
+    
+    // Dmenu mode: print and quit
+    if (m_dmenuMode) {
+        printf("%s\n", primary.toStdString().c_str());
+        fflush(stdout);
+        QCoreApplication::quit();
+        return;
+    }
+
     
     // Window mode: activate window
     if (m_windowProvider && exec.isEmpty()) {

@@ -33,9 +33,14 @@
               qt6.qtbase
               qt6.qtdeclarative
               qt6.qtwayland
+              kdePackages.layer-shell-qt
               wayland
               wayland-protocols
               yaml-cpp
+            ];
+
+            qtWrapperArgs = [
+              "--prefix QML2_IMPORT_PATH : ${pkgs.kdePackages.layer-shell-qt}/lib/qt-6/qml"
             ];
           };
         }
@@ -59,6 +64,7 @@
               qt6.qtbase
               qt6.qtdeclarative
               qt6.qtwayland
+              kdePackages.layer-shell-qt
               wayland
               wayland-protocols
               yaml-cpp
@@ -66,8 +72,8 @@
 
             shellHook = ''
               export QT_QPA_PLATFORM=wayland
-              export QML2_IMPORT_PATH=${pkgs.qt6.qtdeclarative}/lib/qt-6/qml:${pkgs.qt6.qtwayland}/lib/qt-6/qml
-              export QT_PLUGIN_PATH=${pkgs.qt6.qtbase}/lib/qt-6/plugins:${pkgs.qt6.qtwayland}/lib/qt-6/plugins
+              export QML2_IMPORT_PATH=${pkgs.qt6.qtdeclarative}/lib/qt-6/qml:${pkgs.qt6.qtwayland}/lib/qt-6/qml:${pkgs.kdePackages.layer-shell-qt}/lib/qt-6/qml
+              export QT_PLUGIN_PATH=${pkgs.qt6.qtbase}/lib/qt-6/plugins:${pkgs.qt6.qtwayland}/lib/qt-6/plugins:${pkgs.kdePackages.layer-shell-qt}/lib/qt-6/plugins
               echo "Awelauncher Dev Shell"
             '';
           };

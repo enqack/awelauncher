@@ -15,6 +15,8 @@ std::vector<LauncherItem> DesktopFileLoader::scan()
     if (dirs.isEmpty()) {
         dirs << "/usr/share/applications" << QDir::homePath() + "/.local/share/applications";
     }
+    
+    qDebug() << "Scanning for desktop files in:" << dirs;
 
     // Keep track of IDs to avoid duplicates (e.g. user override)
     QHash<QString, bool> seenIds;
@@ -77,6 +79,8 @@ std::vector<LauncherItem> DesktopFileLoader::scan()
             desktopFile.endGroup();
         }
     }
+    
+    qDebug() << "Found" << items.size() << "desktop applications";
     
     // Sort by name
     std::sort(items.begin(), items.end(), [](const LauncherItem& a, const LauncherItem& b) {
