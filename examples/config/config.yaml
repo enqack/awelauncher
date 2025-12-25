@@ -1,0 +1,6 @@
+general:
+  theme: "auto"  # Use "auto" for base16 system theme, or specify a theme name
+
+window:
+  width: 600
+  height: 400

@@ -1,0 +1,79 @@
+# Build artifacts
+build/
+*.o
+*.so
+*.a
+*.dylib
+*.dll
+*.exe
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+*.cmake
+!CMakeLists.txt
+compile_commands.json
+CTestTestfile.cmake
+_deps/
+
+# Qt
+*.qm
+*.prl
+.qmake.stash
+*.pro.user
+*.pro.user.*
+moc_*.cpp
+moc_*.h
+qrc_*.cpp
+ui_*.h
+*.autosave
+.rcc/
+*.qmlc
+*.jsc
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.kate-swp
+.kdev4/
+*.kdev4
+
+# Nix
+result
+result-*
+
+# Runtime / Cache
+*.log
+.cache/
+
+# User config (don't commit personal configs)
+# Users should copy from examples/
+# Uncomment if you want to ignore local configs:
+# ~/.config/awelauncher/
+# ~/.cache/awelauncher/
+
+# Backup files
+*.bak
+*.backup
+*~
+
+# Compiled Python (if any scripts)
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Documentation build artifacts
+docs/_build/
+docs/.buildinfo
+
+# Package artifacts
+*.tar.gz
+*.zip
+*.deb
+*.rpm

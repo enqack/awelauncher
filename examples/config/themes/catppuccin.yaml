@@ -1,0 +1,15 @@
+# Catppuccin Mocha theme with transparency
+colors:
+  bg: "#1e1e2e"
+  fg: "#cdd6f4"
+  accent: "#f5c2e7"      # Pink accent
+  selected: "#45475a"
+  muted: "#a6adc8"
+
+layout:
+  radius: 16
+  padding: 24
+  rowHeight: 52
+  fontSize: 15
+  iconSize: 28
+  opacity: 0.92          # Window transparency (0.0 - 1.0)

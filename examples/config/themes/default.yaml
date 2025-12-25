@@ -1,0 +1,15 @@
+# Default dark theme
+colors:
+  bg: "#1e1e2e"
+  fg: "#cdd6f4"
+  accent: "#89b4fa"      # Blue accent
+  selected: "#313244"
+  muted: "#6c7086"
+
+layout:
+  radius: 16
+  padding: 20
+  rowHeight: 48
+  fontSize: 16
+  iconSize: 32
+  opacity: 0.95          # Window transparency (0.0 - 1.0)
