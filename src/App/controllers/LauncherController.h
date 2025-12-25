@@ -25,6 +25,7 @@ public:
     Q_INVOKABLE void toggleFullscreen(int index);
     Q_INVOKABLE void toggleMaximize(int index);
     Q_INVOKABLE void toggleMinimize(int index);
+    Q_INVOKABLE void beginMoveToMonitor(int index);
 
     void setModel(class LauncherModel* model);
     void setWindowProvider(class WindowProvider* provider);

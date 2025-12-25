@@ -178,7 +178,16 @@ void WindowProvider::moveToOutput(const QString& handleStr, const QString& outpu
     }
     
     if (targetOutput) {
+        const WindowInfo& info = m_windows[handle];
+        bool wasFullscreen = info.state.contains(ZWLR_FOREIGN_TOPLEVEL_HANDLE_V1_STATE_FULLSCREEN);
+
         zwlr_foreign_toplevel_handle_v1_set_fullscreen(handle, targetOutput);
+
+        // If it wasn't fullscreen before, unset it so it just stays on the new monitor
+        if (!wasFullscreen) {
+            zwlr_foreign_toplevel_handle_v1_unset_fullscreen(handle);
+        }
+
         // Activate the window after moving it
         if (m_seat) {
             zwlr_foreign_toplevel_handle_v1_activate(handle, m_seat);

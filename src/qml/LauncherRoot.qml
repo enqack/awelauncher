@@ -361,16 +361,11 @@ Window {
         onActivated: Controller.toggleMinimize(resultsList.currentIndex)
     }
     
-    /*
     Shortcut {
         enabled: cliShowMode === "window"
         sequence: "Ctrl+M"
-        onActivated: {
-            // In 0.3.0, window movement is triggered by Enter on a selected window. 
-            // We could add a Ctrl+M override here if needed.
-        }
+        onActivated: Controller.beginMoveToMonitor(resultsList.currentIndex)
     }
-    */
     
 }
 

@@ -61,34 +61,8 @@ void LauncherController::activate(int index)
     // Window mode: activate window or move to monitor
     if (m_windowProvider && exec.isEmpty()) {
         if (m_selectionMode == Normal) {
-            // If it's a window and we want to move it (could be triggered by a specific hotkey later,
-            // but for now let's make it part of the 'window' mode flow if we decide to extend it.
-            // Actually, the user wants it *after* the app is chosen.
-            
-            // To keep it simple: if in window mode, we activate and quit UNLESS we are in a special 'move' state.
-            // Let's implement a 'Secondary Action' trigger.
-            // For now, let's just make 'window' mode always go to monitor select for testing or if configured.
-            // Use case: "Display it after the app is chosen".
-            
-            m_pendingHandle = itemId;
-            m_selectionMode = MonitorSelect;
-            m_promptOverride = "Move to Monitor...";
-            emit selectionModeChanged();
-            emit promptOverrideChanged();
-            emit clearSearch();
-
-            // Populate model with monitors
-            QStringList outputs = m_windowProvider->getOutputNames();
-            std::vector<LauncherItem> monitorItems;
-            for (const QString& out : outputs) {
-                LauncherItem item;
-                item.id = out;
-                item.primary = out;
-                item.secondary = "Output Monitor";
-                item.iconKey = "video-display";
-                monitorItems.push_back(item);
-            }
-            m_model->setItems(monitorItems);
+            m_windowProvider->activateWindow(itemId);
+            QCoreApplication::quit();
             return;
         } else if (m_selectionMode == MonitorSelect) {
             if (!m_pendingHandle.isEmpty()) {
@@ -218,4 +192,37 @@ void LauncherController::moveWindowToOutput(int index, const QString& outputName
         m_windowProvider->moveToOutput(windowId, outputName);
         qDebug() << "Moving window to output:" << outputName;
     }
+}
+
+void LauncherController::beginMoveToMonitor(int index)
+{
+    if (!m_model || !m_windowProvider) return;
+    QModelIndex modelIndex = m_model->index(index, 0);
+    if (!modelIndex.isValid()) return;
+
+    QString itemId = m_model->data(modelIndex, LauncherModel::IdRole).toString();
+    QString exec = m_model->data(modelIndex, LauncherModel::ExecRole).toString();
+
+    // Only allow moving windows
+    if (!exec.isEmpty()) return;
+
+    m_pendingHandle = itemId;
+    m_selectionMode = MonitorSelect;
+    m_promptOverride = "Move to Monitor...";
+    emit selectionModeChanged();
+    emit promptOverrideChanged();
+    emit clearSearch();
+
+    // Populate model with monitors
+    QStringList outputs = m_windowProvider->getOutputNames();
+    std::vector<LauncherItem> monitorItems;
+    for (const QString& out : outputs) {
+        LauncherItem item;
+        item.id = out;
+        item.primary = out;
+        item.secondary = "Output Monitor";
+        item.iconKey = "video-display";
+        monitorItems.push_back(item);
+    }
+    m_model->setItems(monitorItems);
 }
