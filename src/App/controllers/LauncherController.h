@@ -6,6 +6,15 @@ class LauncherController : public QObject
 {
     Q_OBJECT
 public:
+    enum SelectionMode {
+        Normal,
+        MonitorSelect
+    };
+    Q_ENUM(SelectionMode)
+
+    Q_PROPERTY(SelectionMode selectionMode READ selectionMode NOTIFY selectionModeChanged)
+    Q_PROPERTY(QString promptOverride READ promptOverride NOTIFY promptOverrideChanged)
+
     explicit LauncherController(QObject *parent = nullptr);
 
     Q_INVOKABLE void filter(const QString &text);
@@ -26,13 +35,20 @@ public:
 
     void setDmenuMode(bool enabled);
 
+    SelectionMode selectionMode() const { return m_selectionMode; }
+    QString promptOverride() const { return m_promptOverride; }
 
 signals:
     void windowVisibleChanged(bool visible);
+    void selectionModeChanged();
+    void promptOverrideChanged();
+    void clearSearch();
 
 private:
    class LauncherModel* m_model = nullptr;
    class WindowProvider* m_windowProvider = nullptr;
    bool m_dmenuMode = false;
-
+   SelectionMode m_selectionMode = Normal;
+   QString m_promptOverride = "";
+   QString m_pendingHandle = "";
 };

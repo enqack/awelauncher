@@ -5,8 +5,8 @@ tasks:
     desc: Build the project
     cmds:
       - mkdir -p build
-      - cd build && cmake ..
-      - cd build && make
+      - cmake -B build -S .
+      - cmake --build build
 
   clean:
     desc: Clean build artifacts
@@ -42,7 +42,7 @@ tasks:
   install:
     desc: Install to system
     cmds:
-      - cd build && sudo make install
+      - sudo cmake --install build
 
   dev:
     desc: Enter nix dev shell and build

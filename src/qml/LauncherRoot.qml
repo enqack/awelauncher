@@ -122,22 +122,56 @@ Window {
                         font.pixelSize: AppTheme.fontSize
                     }
 
-                    TextInput {
-                        id: searchInput
+                    // Search Input
+                    Item {
                         Layout.fillWidth: true
                         Layout.fillHeight: true
-                        verticalAlignment: TextInput.AlignVCenter
-                        font.pixelSize: AppTheme.fontSize
-                        color: AppTheme.fg
-                        focus: true
-                        selectByMouse: true
-                        
-                        onTextChanged: Controller.filter(text)
-                        
-                        Keys.onDownPressed: resultsList.incrementCurrentIndex()
-                        Keys.onUpPressed: resultsList.decrementCurrentIndex()
-                        Keys.onEnterPressed: Controller.activate(resultsList.currentIndex)
-                        Keys.onReturnPressed: Controller.activate(resultsList.currentIndex)
+
+                        Text {
+                            anchors.fill: parent
+                            verticalAlignment: Text.AlignVCenter
+                            text: (Controller && Controller.promptOverride && Controller.promptOverride !== "") ? Controller.promptOverride : cliPrompt
+                            color: AppTheme.muted
+                            font.pixelSize: AppTheme.fontSize
+                            visible: searchInput.text === ""
+                        }
+
+                        TextInput {
+                            id: searchInput
+                            anchors.fill: parent
+                            verticalAlignment: TextInput.AlignVCenter
+                            font.pixelSize: AppTheme.fontSize
+                            color: AppTheme.fg
+                            focus: true
+                            selectByMouse: true
+                            
+                            onTextChanged: {
+                                Controller.filter(text)
+                                resultsList.currentIndex = 0
+                            }
+                            
+                            Keys.onPressed: (event) => {
+                                if (event.key === Qt.Key_Escape) {
+                                    root.close()
+                                } else if (event.key === Qt.Key_Down) {
+                                    resultsList.currentIndex = Math.min(resultsList.count - 1, resultsList.currentIndex + 1)
+                                    event.accepted = true
+                                } else if (event.key === Qt.Key_Up) {
+                                    resultsList.currentIndex = Math.max(0, resultsList.currentIndex - 1)
+                                    event.accepted = true
+                                } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+                                    Controller.activate(resultsList.currentIndex)
+                                    event.accepted = true
+                                }
+                            }
+                            
+                            Connections {
+                                target: Controller
+                                function onClearSearch() {
+                                    searchInput.text = ""
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -174,10 +208,7 @@ Window {
                 Item { Layout.fillWidth: true }
                 Text {
                     Layout.maximumWidth: AppTheme.windowWidth * 0.6
-                    text: cliShowMode === "window" ? 
-
-                          "Ctrl+H for help" :
-                          "Enter to select • Esc to close"
+                    text: cliShowMode === "window" ? "Ctrl+H for help" : "Enter to select • Esc to close"
                     color: Qt.darker(AppTheme.fg, 1.5)
                     font.pixelSize: AppTheme.fontSize * 0.7
                     elide: Text.ElideRight
@@ -250,7 +281,7 @@ Window {
                     font.pixelSize: AppTheme.fontSize
                 }
                 Text {
-                    text: "Ctrl+M - Move to next monitor"
+                    text: "Ctrl+M - Move to monitor (select window first)"
                     color: AppTheme.fg
                     font.pixelSize: AppTheme.fontSize
                 }
@@ -330,29 +361,16 @@ Window {
         onActivated: Controller.toggleMinimize(resultsList.currentIndex)
     }
     
+    /*
     Shortcut {
         enabled: cliShowMode === "window"
         sequence: "Ctrl+M"
         onActivated: {
-            outputSelector.visible = true
+            // In 0.3.0, window movement is triggered by Enter on a selected window. 
+            // We could add a Ctrl+M override here if needed.
         }
     }
+    */
     
-    OutputSelector {
-        id: outputSelector
-        anchors.fill: parent
-        visible: false
-        z: 100
-        
-        onOutputSelected: (outputName) => {
-            Controller.moveWindowToOutput(resultsList.currentIndex, outputName)
-            visible = false
-        }
-        
-        onCancelled: {
-            visible = false
-            root.requestActivate() // Restore focus to main window
-        }
-    }
 }
 

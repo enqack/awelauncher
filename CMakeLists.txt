@@ -6,7 +6,10 @@ set(CMAKE_SUPPRESS_DEVELOPER_WARNINGS ON)
 file(READ "VERSION" APP_VERSION)
 string(STRIP "${APP_VERSION}" APP_VERSION)
 
-project(awelauncher VERSION ${APP_VERSION} LANGUAGES C CXX)
+project(awelauncher
+    VERSION ${APP_VERSION}
+    LANGUAGES C CXX
+)
 
 add_compile_definitions(APP_VERSION="${APP_VERSION}")
 
@@ -117,7 +120,6 @@ qt_add_qml_module(awelaunch
     QML_FILES
         src/qml/LauncherRoot.qml
         src/qml/ResultRow.qml
-        src/qml/OutputSelector.qml
     RESOURCES
         examples/config/config.yaml
         examples/config/themes/default.yaml

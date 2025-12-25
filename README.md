@@ -1,5 +1,12 @@
 # awelauncher
 
+[![Version](https://img.shields.io/badge/version-0.2.0-blue.svg)](VERSION)
+[![License](https://img.shields.io/badge/license-BSD--3--Clause-green.svg)](LICENSE)
+[![Platform](https://img.shields.io/badge/platform-Wayland-orange.svg)](https://wayland.freedesktop.org/)
+[![Qt](https://img.shields.io/badge/Qt-6-blue?logo=qt)](https://www.qt.io/)
+[![C++](https://img.shields.io/badge/C++-17-blue.svg)](https://isocpp.org/)
+[![Nix](https://img.shields.io/badge/Nix-Flake-blueviolet.svg?logo=nixos)](flake.nix)
+
 A fast, minimal Wayland launcher built with Qt6 and QtQuick.
 
 ## Features
@@ -127,7 +134,7 @@ See `docs/design-doc.md` for full design specification.
 
 ## License
 
-MIT (or your preferred license)
+BSD-3-Clause
 
 ## Credits
 

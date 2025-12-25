@@ -2,7 +2,7 @@
   description = "A Wayland-first launcher in QtQuick + C++";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.11";
   };
 
   outputs = { self, nixpkgs }:
@@ -18,8 +18,8 @@
         in
         {
           default = pkgs.stdenv.mkDerivation {
-            pname = "awelaunch";
-            version = "0.1.0";
+            pname = "awelauncher";
+            version = nixpkgs.lib.removeSuffix "\n" (builtins.readFile ./VERSION);
             src = ./.;
 
             nativeBuildInputs = with pkgs; [
