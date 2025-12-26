@@ -35,6 +35,10 @@
 #include "App/providers/DesktopFileLoader.h"
 #include "App/providers/WindowProvider.h"
 #include "App/providers/StdinProvider.h"
+#include "App/providers/PathProvider.h"
+#include "App/providers/DesktopProvider.h"
+#include "App/providers/ProcessProvider.h"
+#include "App/providers/SSHProvider.h"
 
 
 #include <QStandardPaths>
@@ -83,12 +87,12 @@ int main(int argc, char *argv[])
     
     // Parse command-line arguments
     QCommandLineParser parser;
-    parser.setApplicationDescription("A Wayland-first launcher in QtQuick + C++");
+    parser.setApplicationDescription("Run in awe! - A Wayland-first launcher in QtQuick + C++");
     parser.addHelpOption();
     parser.addVersionOption();
     
     QCommandLineOption showOption(QStringList() << "s" << "show",
-        "Show specific provider mode: drun, run, or window", "mode", "drun");
+        "Show specific provider mode: drun, run, window, top, kill, ssh", "mode", "drun");
     parser.addOption(showOption);
     
     QCommandLineOption themeOption(QStringList() << "t" << "theme",
@@ -121,6 +125,10 @@ int main(int argc, char *argv[])
     
     QCommandLineOption dmenuOption(QStringList() << "d" << "dmenu", "Run in dmenu mode (read stdin, print to stdout)");
     parser.addOption(dmenuOption);
+    
+    // Tier 1: Provider Sets
+    QCommandLineOption setOption("set", "Activate a named provider set (e.g. dev, media)", "name");
+    parser.addOption(setOption);
 
     QCommandLineOption overlayOption("overlay", "Force window to use Overlay layer (ignore status bars)");
     parser.addOption(overlayOption);
@@ -170,7 +178,7 @@ int main(int argc, char *argv[])
     // Register singletons/providers
     
     // Icon provider
-    engine.addImageProvider("icons", new IconProvider());
+    engine.addImageProvider("icon", new IconProvider());
 
     // Core Controller
     LauncherController controller;
@@ -211,65 +219,189 @@ int main(int argc, char *argv[])
     // Connect logic
     controller.setModel(&model);
 
-    // Load items based on show mode
-    if (showMode == "run") {
-        // Load PATH executables
-        std::vector<LauncherItem> pathItems;
-        QStringList pathDirs = QString(qgetenv("PATH")).split(":", Qt::SkipEmptyParts);
-        
-        for (const QString& dir : pathDirs) {
-            QDir d(dir);
-            if (!d.exists()) continue;
-            
-            QFileInfoList files = d.entryInfoList(QDir::Files | QDir::Executable, QDir::Name);
-            for (const QFileInfo& file : files) {
-                LauncherItem item;
-                item.id = "path:" + file.fileName();
-                item.primary = file.fileName();
-                item.secondary = file.absoluteFilePath();
-                item.iconKey = "application-x-executable";
-                item.exec = file.fileName();
-                item.terminal = false;
-                item.selected = false;
-                pathItems.push_back(item);
-            }
-        }
-        model.setItems(pathItems);
-    } else if (showMode == "window") {
-        // Load windows from Wayland
-        WindowProvider* windowProvider = new WindowProvider(&app);
-        if (windowProvider->initialize()) {
-            auto windows = windowProvider->getWindows();
-            std::vector<LauncherItem> windowItems(windows.begin(), windows.end());
-            model.setItems(windowItems);
-            controller.setWindowProvider(windowProvider);
-            qDebug() << "Loaded" << windows.size() << "windows";
+    // --- Provider Aggregation Logic ---
+    
+    Config::ProviderSet activeSet;
+    activeSet.name = "adhoc";
+    bool usingSet = false;
+    
+    // 1. Determine which Set to use
+    if (parser.isSet(setOption)) {
+        QString setName = parser.value(setOption);
+        auto configSet = Config::instance().getSet(setName);
+        if (configSet) {
+            activeSet = *configSet;
+            usingSet = true;
+            qDebug() << "Loaded Provider Set:" << setName;
         } else {
-            qWarning() << "Failed to initialize window provider";
-            delete windowProvider;
+            qWarning() << "Provider Set not found:" << setName << "- falling back to defaults";
         }
-    } else if (parser.isSet(dmenuOption)) {
-        // dmenu mode: read stdin
-        StdinProvider* stdinProvider = new StdinProvider(&app);
+    } 
+    
+    // Fallback if no set loaded: Check for --show argument (legacy/ad-hoc mode)
+    if (!usingSet) {
+        QString mode = showMode.isEmpty() ? "drun" : showMode;
         
-        QObject::connect(stdinProvider, &StdinProvider::itemsChanged, &model, [&model, stdinProvider](){
-            auto items = stdinProvider->getItems();
-            std::vector<LauncherItem> stdItems(items.begin(), items.end());
-            model.setItems(stdItems);
-        });
+        // Construct an ad-hoc set
+        activeSet.providers.append(mode);
+        activeSet.name = mode;
         
-        stdinProvider->start();
+        // Special case: if dmenu flag is on, force dmenu provider
+        if (parser.isSet(dmenuOption)) {
+            activeSet.providers.clear();
+            activeSet.providers.append("dmenu");
+            activeSet.name = "dmenu";
+        }
         
-        controller.setDmenuMode(true);
-    } else {
-        // Load desktop applications (drun mode)
-        auto items = DesktopFileLoader::scan();
-        qDebug() << "[Provider] Drun mode found" << items.size() << "items";
-        model.setItems(items);
+        // Defaults for ad-hoc modes
+        if (activeSet.providers.contains("top")) {
+            activeSet.prompt = "Top > ";
+            activeSet.icon = "utilities-system-monitor";
+        } else if (activeSet.providers.contains("kill")) {
+            activeSet.prompt = "Kill > ";
+            activeSet.icon = "process-stop"; // or application-exit
+        } else if (activeSet.providers.contains("ssh")) {
+            activeSet.prompt = "SSH > ";
+            activeSet.icon = "network-server"; // or computer
+        }
+    }
+    
+    // Apply Active Set prompts/overrides
+    if (!activeSet.prompt.isEmpty()) {
+        engine.rootContext()->setContextProperty("cliPrompt", activeSet.prompt);
+    }
+    engine.rootContext()->setContextProperty("cliIcon", activeSet.icon.isEmpty() ? "search" : activeSet.icon);
+
+    // Apply layout overrides if present
+    if (usingSet) {
+        QMap<QString, QString> setOverrides;
+        if (activeSet.layout.width) setOverrides["window.width"] = QString::number(*activeSet.layout.width);
+        if (activeSet.layout.height) setOverrides["window.height"] = QString::number(*activeSet.layout.height);
+        if (!activeSet.layout.anchor.isEmpty()) setOverrides["window.anchor"] = activeSet.layout.anchor;
+        if (activeSet.layout.margin) setOverrides["window.margin"] = QString::number(*activeSet.layout.margin);
+        if (!setOverrides.isEmpty()) {
+            Config::instance().setOverrides(setOverrides);
+        }
     }
 
+    // 2. Instantiate Providers
+    std::vector<LauncherItem> aggregatedItems;
     
-    PROFILE_POINT("Items loaded");
+    for (const QString& providerName : activeSet.providers) {
+        if (providerName == "run") {
+            auto items = PathProvider::scan();
+            aggregatedItems.insert(aggregatedItems.end(), items.begin(), items.end());
+        } 
+        else if (providerName == "drun") {
+            auto items = DesktopProvider::scan();
+            aggregatedItems.insert(aggregatedItems.end(), items.begin(), items.end());
+        }
+        else if (providerName == "top") {
+            int limit = Config::instance().getInt("top.limit", 10);
+            QString sortStr = Config::instance().getString("top.sort", "cpu");
+            ProcessProvider::SortMode sort = (sortStr == "memory") ? ProcessProvider::MEMORY : ProcessProvider::CPU;
+            
+            auto items = ProcessProvider::scan(true, limit, sort, false);
+            aggregatedItems.insert(aggregatedItems.end(), items.begin(), items.end());
+        }
+        else if (providerName == "kill") {
+            bool showSystem = Config::instance().getString("kill.show_system", "false") == "true";
+            // For kill mode, we list ALL (limit -1), sorted by name? Or Memory? Default to Memory for now strictly to be useful.
+            auto items = ProcessProvider::scan(false, -1, ProcessProvider::MEMORY, showSystem);
+            aggregatedItems.insert(aggregatedItems.end(), items.begin(), items.end());
+        }
+        else if (providerName == "ssh") {
+            QString termCmd = Config::instance().getString("ssh.terminal", "");
+            bool parseKnown = Config::instance().getString("ssh.parse_known_hosts", "true") == "true";
+            auto items = SSHProvider::scan(termCmd, parseKnown);
+            aggregatedItems.insert(aggregatedItems.end(), items.begin(), items.end());
+        }
+        else if (providerName == "window") {
+            static WindowProvider* wp = nullptr; 
+            if (!wp) {
+                wp = new WindowProvider(&app);
+                if (wp->initialize()) {
+                    controller.setWindowProvider(wp);
+                    auto windows = wp->getWindows();
+                    std::vector<LauncherItem> wItems(windows.begin(), windows.end());
+                    aggregatedItems.insert(aggregatedItems.end(), wItems.begin(), wItems.end());
+                } else {
+                    delete wp; wp = nullptr;
+                }
+            }
+        }
+        else if (providerName == "dmenu") {
+            StdinProvider* stdinProvider = new StdinProvider(&app);
+            QObject::connect(stdinProvider, &StdinProvider::itemsChanged, &model, [&model, stdinProvider](){
+                auto items = stdinProvider->getItems();
+                std::vector<LauncherItem> stdItems(items.begin(), items.end());
+                model.setItems(stdItems);
+            });
+            stdinProvider->start();
+            controller.setDmenuMode(true);
+        }
+    }
+    
+    // 3. Apply Filters
+    if (!activeSet.filter.include.isEmpty() || !activeSet.filter.exclude.isEmpty()) {
+         std::vector<LauncherItem> filtered;
+         for (const auto& item : aggregatedItems) {
+             bool keep = true;
+             
+             // Regex helper
+             auto matches = [](const QString& text, const QStringList& rules) {
+                 for (const auto& rule : rules) {
+                     if (rule.startsWith("/") && rule.endsWith("/")) {
+                         // Regex
+                         QString pattern = rule.mid(1, rule.length()-2);
+                         if (QRegularExpression(pattern).match(text).hasMatch()) return true;
+                     } else {
+                         // Substring
+                         if (text.contains(rule, Qt::CaseInsensitive)) return true;
+                     }
+                 }
+                 return false;
+             };
+             
+             // Check Exclude (High priority)
+             if (!activeSet.filter.exclude.isEmpty()) {
+                 if (matches(item.primary, activeSet.filter.exclude) || matches(item.id, activeSet.filter.exclude)) {
+                     keep = false;
+                 }
+             }
+             
+             // Check Include (if survived exclude)
+             if (keep && !activeSet.filter.include.isEmpty()) {
+                 bool included = false;
+                 if (matches(item.primary, activeSet.filter.include) || matches(item.id, activeSet.filter.include)) {
+                     included = true;
+                 }
+                 if (!included) keep = false;
+             }
+             
+             if (keep) filtered.push_back(item);
+         }
+         aggregatedItems = filtered;
+    }
+    
+    // Set Items on Model
+    if (!parser.isSet(dmenuOption)) {
+         model.setItems(aggregatedItems);
+    }
+    
+    // Configure fallback
+    Config::instance().validateKeys(); // Ensure all keys valid
+    // For now, assuming standard fallback behavior is desired unless disabled
+    // If we parsed `general.fallbacks.run_command` from config, we'd use it here.
+    // Let's check config string manually for now since we don't have a typed getter for specific deep keys yet
+    // Actually, we do have recursion logic.
+    // But `Config` logic is: "general.fallbacks.run_command" -> key split...
+    // Let's assume defaults for now or parse deeply if time permits.
+    // Since `getString` splits by dot, we can try: 
+    QString fallbackStr = Config::instance().getString("general.fallbacks.run_command", "true");
+    model.setFallbackEnabled(fallbackStr == "true");
+
+    PROFILE_POINT("Items aggregated");
 
     const QUrl url(QStringLiteral(u"qrc:/awelauncher/src/qml/LauncherRoot.qml"));
     QObject::connect(&engine, &QQmlApplicationEngine::objectCreated,

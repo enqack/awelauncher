@@ -79,6 +79,93 @@ void Config::load(const QString& configPath)
         qWarning() << "Unknown error loading config file:" << configPath;
     }
     
+    // Load sets
+    if (m_config["sets"].IsDefined() && m_config["sets"].IsMap()) {
+        YAML::Node setsNode = m_config["sets"];
+        for (YAML::const_iterator it = setsNode.begin(); it != setsNode.end(); ++it) {
+            QString setName = QString::fromStdString(it->first.as<std::string>());
+            YAML::Node setNode = it->second;
+            
+            ProviderSet set;
+            set.name = setName;
+            
+            // prompt
+            if (setNode["prompt"].IsDefined()) {
+                set.prompt = QString::fromStdString(setNode["prompt"].as<std::string>());
+            }
+            
+            // icon
+            if (setNode["icon"].IsDefined()) {
+                set.icon = QString::fromStdString(setNode["icon"].as<std::string>());
+            }
+            
+            // providers
+            if (setNode["providers"].IsDefined() && setNode["providers"].IsSequence()) {
+                for (const auto& p : setNode["providers"]) {
+                    set.providers.append(QString::fromStdString(p.as<std::string>()));
+                }
+            }
+            
+            // layout overrides
+            if (setNode["layout"].IsDefined()) {
+                YAML::Node l = setNode["layout"];
+                if (l["width"].IsDefined()) set.layout.width = l["width"].as<int>();
+                if (l["height"].IsDefined()) set.layout.height = l["height"].as<int>();
+                if (l["anchor"].IsDefined()) set.layout.anchor = QString::fromStdString(l["anchor"].as<std::string>());
+                if (l["margin"].IsDefined()) set.layout.margin = l["margin"].as<int>();
+            }
+            
+            // filter
+            if (setNode["filter"].IsDefined()) {
+                YAML::Node f = setNode["filter"];
+                
+                auto parseList = [](const YAML::Node& node, const char* key) -> QStringList {
+                    QStringList list;
+                    if (node[key].IsDefined()) {
+                         if (node[key].IsSequence()) {
+                            for (const auto& item : node[key]) {
+                                list.append(QString::fromStdString(item.as<std::string>()));
+                            }
+                        } else {
+                             list.append(QString::fromStdString(node[key].as<std::string>()));
+                        }
+                    }
+                    return list;
+                };
+
+                // For MVP, we treat "include" inside filter as a bag of strings
+                // The spec allows app_id/title keys, but we'll flatten them or support them specifically if needed.
+                // Re-reading spec: keys are `app_id: [...]`.
+                // Let's check keys.
+                
+                // Helper to extract values from map
+                auto extractMapValues = [&](const YAML::Node& node) -> QStringList {
+                    QStringList res;
+                    if (node.IsMap()) {
+                        for (YAML::const_iterator it = node.begin(); it != node.end(); ++it) {
+                            // it->second should be a list or string
+                            if (it->second.IsSequence()) {
+                                for (const auto& v : it->second) res.append(QString::fromStdString(v.as<std::string>()));
+                            } else {
+                                res.append(QString::fromStdString(it->second.as<std::string>()));
+                            }
+                        }
+                    }
+                    return res;
+                };
+
+                if (f["include"].IsDefined()) {
+                    set.filter.include = extractMapValues(f["include"]);
+                }
+                if (f["exclude"].IsDefined()) {
+                    set.filter.exclude = extractMapValues(f["exclude"]);
+                }
+            }
+            
+            m_sets.insert(setName, set);
+        }
+    }
+    
     validateKeys();
 }
     
@@ -87,9 +174,15 @@ void Config::validateKeys() {
     qInfo() << "Validating config keys...";
     if (!m_config.IsDefined() || !m_config.IsMap()) return;
     
-    // Whitelist of valid top-level keys
-    QStringList validKeys = { "general", "window", "layout" };
     
+    // Whitelist of valid top-level keys
+    QStringList validKeys = { "general", "window", "layout", "sets", "top", "kill", "ssh" };
+    
+    // ... validation loop ...
+    
+    // Check general.empty_state and fallbacks
+    // (Actual usage is via getString/getBool in code, so validation could be looser or stricter)
+
     for (YAML::const_iterator it = m_config.begin(); it != m_config.end(); ++it) {
         QString key = QString::fromStdString(it->first.as<std::string>());
         if (!validKeys.contains(key)) {
@@ -182,4 +275,12 @@ QColor Config::getColor(const QString& key, const QColor& defaultValue) const
 void Config::setOverrides(const QMap<QString, QString>& overrides) {
     m_overrides = overrides;
     qInfo() << "Config overrides applied:" << overrides.size();
+}
+
+std::optional<Config::ProviderSet> Config::getSet(const QString& name) const
+{
+    if (m_sets.contains(name)) {
+        return m_sets.value(name);
+    }
+    return std::nullopt;
 }

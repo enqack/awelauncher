@@ -3,6 +3,7 @@
 #include "../utils/MRUTracker.h"
 #include "../providers/WindowProvider.h"
 #include <QDebug>
+#include <signal.h>
 
 LauncherController::LauncherController(QObject *parent)
     : QObject(parent)
@@ -77,6 +78,20 @@ void LauncherController::activate(int index)
     // App mode: launch application
     if (exec.isEmpty()) return;
     
+    // Kill mode: handle "kill:" prefix in exec
+    if (exec.startsWith("kill:")) {
+        QString pidStr = exec.mid(5);
+        bool ok;
+        int pid = pidStr.toInt(&ok);
+        if (ok) {
+            // Signal 15 is SIGTERM
+            ::kill(pid, 15);
+            qDebug() << "Sent SIGTERM to process:" << pid;
+            QCoreApplication::quit();
+            return;
+        }
+    }
+    
     bool isTerminal = m_model->data(modelIndex, LauncherModel::TerminalRole).toBool();
     QString program;
     QStringList args;
@@ -85,7 +100,7 @@ void LauncherController::activate(int index)
         // Find available terminal
         QString term;
         const QStringList terminals = {
-            "gnome-terminal", "konsole", "alacritty", "kitty", "xfce4-terminal", "urxvt", "xterm", "weston-terminal" 
+            "gnome-terminal", "konsole", "alacritty", "kitty", "xfce4-terminal", "urxvt", "xterm", "weston-terminal", "foot"
         };
 
         for (const auto &t : terminals) {

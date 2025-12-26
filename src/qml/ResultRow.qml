@@ -18,7 +18,7 @@ Item {
             id: icon
             Layout.preferredWidth: AppTheme.iconSize
             Layout.preferredHeight: AppTheme.iconSize
-            source: "image://icons/" + model.iconKey
+            source: "image://icon/" + model.iconKey
             asynchronous: true
             cache: true
             fillMode: Image.PreserveAspectFit

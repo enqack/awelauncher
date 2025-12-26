@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Awelauncher
+Comment=Run in awe!
+Exec=awelaunch %u
+Icon=awelauncher
+Terminal=false
+Categories=Utility;
+Keywords=launcher;wayland;qt;
+StartupNotify=true

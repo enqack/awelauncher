@@ -24,3 +24,40 @@ general:
 # window:
 #   width: 800
 #   height: 500
+#   anchor: "center"
+#   margin: 0
+
+# --- Provider Sets (Tier 1) ---
+# Define named sets of providers for different workflows.
+# Activate via: awelaunch --set <name>
+sets:
+  dev:
+    providers: [run, drun, top, ssh]
+    icon: "applications-development" # Tier 3: Context Icon
+    prompt: "Dev > "
+    filter:
+      include: ["code", "term", "firefox"]
+      exclude: ["steam", "games"]
+    layout:
+      width: 800
+      height: 600
+
+# --- Utility Providers (Tier 2/4) ---
+# Configuration for top, kill, ssh modes.
+top:
+  limit: 15
+  sort: cpu # or memory
+
+kill:
+  show_system: false # If true, lists root processes too (careful!)
+
+ssh:
+  terminal: "foot -e" # Command to launch terminal. Default: xdg-terminal-exec
+  parse_known_hosts: true
+
+# --- Visual Polish (Tier 3) ---
+general:
+  empty_state:
+    shown: true # Show "No results" overlay
+  fallbacks:
+    run_command: true # Add "Run <query> in terminal" item if no matches

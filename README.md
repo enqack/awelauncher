@@ -1,25 +1,29 @@
 # awelauncher
 
-[![Version](https://img.shields.io/badge/version-0.3.3-blue.svg)](VERSION)
+[![Version](https://img.shields.io/badge/version-0.4.0-blue.svg)](VERSION)
 [![License](https://img.shields.io/badge/license-BSD--3--Clause-green.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Wayland-orange.svg)](https://wayland.freedesktop.org/)
 [![Qt](https://img.shields.io/badge/Qt-6-blue?logo=qt)](https://www.qt.io/)
-[![C++](https://img.shields.io/badge/C++-17-blue.svg)](https://isocpp.org/)
+[![C++](https://img.shields.io/badge/C++-20-blue.svg)](https://isocpp.org/)
 [![Nix](https://img.shields.io/badge/Nix-Flake-blueviolet.svg?logo=nixos)](flake.nix)
 
-A fast, minimal Wayland launcher built with Qt6 and QtQuick.
+> **Run in awe!** 🚀
+> A fast, minimal Wayland launcher built with Qt6 and QtQuick.
 
 ## Features
 
 - **Fuzzy search** with visual match highlighting
 - **Multiple modes**: 
-  - Desktop apps (drun)
-  - Command runner (run)
-  - Window switcher (window) - Wayland window management
+  - Desktop apps (`drun`)
+  - Command runner (`run`)
+  - Window switcher (`window`) - Wayland window management
+  - **Process Manager** (`top`, `kill`) - *New in 0.4.0*
+  - **SSH Launcher** (`ssh`) - *New in 0.4.0*
+- **Provider Sets**: Create custom workflows (e.g., `--set dev`) combining specific providers and filters.
+- **Visual Polish**: Context icons, empty state overlays, and smart fallbacks.
 - **Window controls**: Switch, close, fullscreen, maximize, minimize, move to monitor
 - **Dmenu compliance**: Scriptable input/output mode (-d)
 - **MRU boost**: Recently used apps/windows appear higher in results
-
 - **Icon caching**: Async loading with disk cache for instant startup
 - **Theming**: YAML-based themes + base16 system theme support
 - **Performance**: 76ms cold start, < 16ms search updates
@@ -42,7 +46,7 @@ Requirements:
 - Qt6 (Quick, Gui, WaylandClient)
 - yaml-cpp
 - CMake 3.16+
-- C++17 compiler
+- C++20 compiler
 
 ```bash
 mkdir build && cd build
@@ -72,6 +76,8 @@ cp examples/config/themes/*.yaml ~/.config/awelauncher/themes/
 
 ## Usage
 
+### Basic Modes
+
 ```bash
 # Launch desktop app picker
 awelaunch --show drun
@@ -81,10 +87,33 @@ awelaunch --show run
 
 # Launch window switcher (Wayland)
 awelaunch --show window
+```
 
-# Use custom theme
-awelaunch --theme catppuccin
+### Utility Modes (New)
 
+```bash
+# Top processes (snapshot)
+awelaunch --show top
+
+# Kill process (fuzzy find + kill)
+awelaunch --show kill
+
+# Connect via SSH (parses ~/.ssh/config)
+awelaunch --show ssh
+```
+
+### Provider Sets (Advanced)
+
+Define sets in `config.yaml` to mix providers, filter results, and customize the prompt.
+
+```bash
+# Activate 'dev' set (e.g., run + top + ssh)
+awelaunch --set dev
+```
+
+### Customization
+
+```bash
 # Use custom theme
 awelaunch --theme catppuccin
 

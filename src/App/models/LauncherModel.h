@@ -41,6 +41,8 @@ public:
         MatchPositionsRole
     };
 
+    Q_PROPERTY(int count READ rowCount NOTIFY countChanged)
+
     explicit LauncherModel(QObject *parent = nullptr);
 
     int rowCount(const QModelIndex &parent = QModelIndex()) const override;
@@ -55,9 +57,16 @@ public:
     
     /** @brief Sets the provider mode (drun, run, window). */
     void setShowMode(const QString& mode) { m_showMode = mode; }
+    
+    /** @brief Enable/Disable fallback "Run..." item */
+    void setFallbackEnabled(bool enabled) { m_fallbackEnabled = enabled; }
+
+signals:
+    void countChanged();
 
 private:
     std::vector<LauncherItem> m_allItems;
     std::vector<LauncherItem> m_displayedItems;
     QString m_showMode = "drun";
+    bool m_fallbackEnabled = true;
 };

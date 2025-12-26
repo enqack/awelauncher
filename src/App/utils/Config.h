@@ -3,6 +3,7 @@
 #include <QString>
 #include <QMap>
 #include <QColor>
+#include <optional>
 #include <yaml-cpp/yaml.h>
 
 /**
@@ -39,11 +40,38 @@ public:
     void setDebug(bool debug) { m_debug = debug; }
     bool isDebug() const { return m_debug; }
 
+    struct FilterRule {
+        QStringList include;
+        QStringList exclude;
+    };
+
+    struct LayoutConfig {
+        std::optional<int> width;
+        std::optional<int> height;
+        QString anchor;
+        std::optional<int> margin;
+    };
+
+    struct ProviderSet {
+        QString name;
+        QString prompt;
+        QString icon;
+        QStringList providers;
+        FilterRule filter;
+        LayoutConfig layout;
+    };
+    
+    /** @brief Retrieves a defined ProviderSet by name. Returns empty if not found. */
+    std::optional<ProviderSet> getSet(const QString& name) const;
+    /** @brief Get the default set name (usually "default"). */
+    QString getDefaultSetName() const { return "default"; }
+
 private:
     Config() = default;
 
     YAML::Node m_config;
     QString m_lastPath;
     QMap<QString, QString> m_overrides;
+    QMap<QString, ProviderSet> m_sets;
     bool m_debug = false;
 };

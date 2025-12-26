@@ -26,10 +26,23 @@ Rectangle {
         anchors.margins: AppTheme.padding / 2
         spacing: AppTheme.padding / 2
         
-        Text { 
-            text: "" 
-            color: AppTheme.muted ? AppTheme.muted : "#888" 
-            font.pixelSize: AppTheme.fontSize
+        // Context Icon
+        // Context Icon
+        Image {
+            id: contextIcon
+            source: "image://icon/" + (cliIcon !== "" ? cliIcon : "search")
+            
+            // Layout control
+            Layout.preferredWidth: AppTheme.fontSize * 1.2
+            Layout.preferredHeight: AppTheme.fontSize * 1.2
+            Layout.alignment: Qt.AlignVCenter
+            
+            // Render settings
+            sourceSize.width: AppTheme.fontSize * 2 // Load higher quality
+            sourceSize.height: AppTheme.fontSize * 2
+            fillMode: Image.PreserveAspectFit
+            
+            // Fallback logic handled by provider
         }
 
         // Search Input

@@ -68,7 +68,7 @@ Window {
 
     color: "transparent"
     
-    opacity: AppTheme.opacity
+    // opacity: AppTheme.opacity // Removed: unsupported by LayerShell
     
     onActiveChanged: {
         if (!active) {
@@ -85,6 +85,8 @@ Window {
         focusTimer.start()
     }
     
+    // ...
+
     Timer {
         id: focusTimer
         interval: 100
@@ -98,11 +100,12 @@ Window {
     }
     
     property bool showHelp: false
-    
+
     // Main Background
     Rectangle {
         anchors.fill: parent
-        color: AppTheme.bg
+        // Apply opacity to the background color instead of the window
+        color: Qt.rgba(AppTheme.bg.r, AppTheme.bg.g, AppTheme.bg.b, AppTheme.opacity)
         radius: AppTheme.radius
         border.color: AppTheme.border
         border.width: AppTheme.borderWidth
@@ -143,6 +146,35 @@ Window {
                     }
                     highlightMoveDuration: 100
                     spacing: AppTheme.padding / 4
+                }
+                
+                // Empty State Overlay
+                Item {
+                    id: emptyState
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    visible: resultsList.count === 0
+                    
+                    ColumnLayout {
+                        anchors.centerIn: parent
+                        spacing: AppTheme.padding
+                        
+                        Image {
+                            Layout.alignment: Qt.AlignHCenter
+                            source: "image://icon/face-sad" // or "dialog-information"
+                            sourceSize.width: 64
+                            sourceSize.height: 64
+                            opacity: 0.5
+                        }
+                        
+                        Text {
+                            Layout.alignment: Qt.AlignHCenter
+                            text: "No results found"
+                            color: AppTheme.muted
+                            font.pixelSize: AppTheme.fontSize
+                            opacity: 0.7
+                        }
+                    }
                 }
                 
                 // Footer

@@ -58,6 +58,7 @@ void LauncherModel::setItems(const std::vector<LauncherItem>& items)
     m_allItems = items;
     m_displayedItems = items;
     endResetModel();
+    emit countChanged();
     qDebug() << "LauncherModel::setItems finished. Display count:" << m_displayedItems.size();
 }
 
@@ -120,19 +121,25 @@ void LauncherModel::filter(const QString& query)
             m_displayedItems.push_back(scored.item);
         }
         
-        // Run provider: if no matches and query looks like a command, add synthetic "Run" item
-        if (m_displayedItems.empty() && !query.trimmed().isEmpty()) {
+        // Fallback: simple "Run command" if no matches
+        if (m_displayedItems.empty() && !query.trimmed().isEmpty() && m_fallbackEnabled) {
             LauncherItem runItem;
-            runItem.id = "run:" + query;
-            runItem.primary = "Run: " + query;
-            runItem.secondary = "Execute as shell command";
-            runItem.iconKey = "system-run";
-            runItem.exec = query;
-            runItem.terminal = false;
+            runItem.id = "fallback:" + query;
+            runItem.primary = "Run '" + query + "' in terminal";
+            runItem.secondary = "Custom Command";
+            runItem.iconKey = "utilities-terminal";
+            
+            // Just pass the query as exec. The Controller's logic for terminal vs shell 
+            // depends on "TerminalRole". We want this to run in terminal usually?
+            // "run in terminal" implies TerminalRole = true.
+            runItem.exec = query; 
+            runItem.terminal = true; 
+            
             runItem.selected = false;
             m_displayedItems.push_back(runItem);
         }
     }
     endResetModel();
+    emit countChanged();
 }
 

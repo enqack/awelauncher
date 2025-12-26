@@ -48,6 +48,14 @@ add_executable(awelaunch
     src/App/utils/MRUTracker.h
     src/App/providers/StdinProvider.cpp
     src/App/providers/StdinProvider.h
+    src/App/providers/PathProvider.cpp
+    src/App/providers/PathProvider.h
+    src/App/providers/DesktopProvider.cpp
+    src/App/providers/DesktopProvider.h
+    src/App/providers/ProcessProvider.cpp
+    src/App/providers/ProcessProvider.h
+    src/App/providers/SSHProvider.cpp
+    src/App/providers/SSHProvider.h
 )
 
 target_include_directories(awelaunch PRIVATE src)
@@ -132,6 +140,7 @@ qt_add_qml_module(awelaunch
 )
 
 install(TARGETS awelaunch DESTINATION bin)
+install(FILES examples/awelaunch.desktop DESTINATION share/applications)
 
 # Testing
 option(BUILD_TESTING "Build tests" ON)
