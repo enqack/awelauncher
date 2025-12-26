@@ -1,5 +1,9 @@
 # awelauncher
 
+<p align="center">
+  <img src="assets/logo.png" width="128" height="128" alt="awelauncher logo">
+</p>
+
 [![Version](https://img.shields.io/badge/version-0.4.4-blue.svg)](VERSION)
 [![License](https://img.shields.io/badge/license-BSD--3--Clause-green.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Wayland-orange.svg)](https://wayland.freedesktop.org/)
@@ -156,7 +160,7 @@ echo -e "Option A\nOption B" | awelaunch -d
   - `WindowProvider` - Wayland window enumeration and control
 - **Utils**: Config, theme, fuzzy matcher, MRU tracker
 
-See `docs/design-doc.md` for full design specification.
+See `docs/rfcs/000-design-spec.md` for full design specification.
 
 ## Performance
 

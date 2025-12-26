@@ -89,7 +89,7 @@ int main(int argc, char *argv[])
     
     // Parse command-line arguments
     QCommandLineParser parser;
-    parser.setApplicationDescription("Run in awe! - A Wayland-first launcher in QtQuick + C++");
+    parser.setApplicationDescription("Run in awe! - A system engineer’s launcher.");
     parser.addHelpOption();
     parser.addVersionOption();
     

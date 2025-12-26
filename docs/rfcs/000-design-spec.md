@@ -32,6 +32,8 @@ A wofi-simple launcher with **Qt-grade sizing/styling/icons**, implemented with 
 **🚧 Planned (v0.5+):**
 - **Plugin System**: External provider binary API.
 - **Workspace movement** (requires protocol support).
+- **Man/Apropos Provider**: System documentation search with `apropos` indexing (keyword/summary) and `man` viewer.
+- **Journal/Logs Provider**: View system logs (`journalctl`) directly in the interface.
 
 ### Core principles
 

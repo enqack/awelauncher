@@ -3,7 +3,8 @@ Type=Application
 Name=Awelauncher
 Comment=Run in awe!
 Exec=awelaunch %u
-Icon=awelauncher
+Icon=/usr/share/pixmaps/awelaunch.png
+# Local dev path: assets/logo.pnger
 Terminal=false
 Categories=Utility;
 Keywords=launcher;wayland;qt;
