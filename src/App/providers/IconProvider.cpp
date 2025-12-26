@@ -9,6 +9,7 @@
 #include <QDateTime>
 #include <QIcon>
 #include <QPixmap>
+#include <QDirIterator>
 
 class IconRunner : public QRunnable
 {
@@ -59,22 +60,19 @@ void IconResponse::run()
         }
     } else if (m_id.startsWith("qrc:/")) {
         QString resPath = m_id.mid(3); // "qrc:/..." -> ":/..."
-        if (QFile::exists(resPath)) {
-            if (!m_image.load(resPath)) {
-                // qWarning() << "Failed to load qrc icon:" << resPath; // Removed debug log
-            } else {
-                // qInfo() << "Successfully loaded qrc icon:" << resPath; // Removed debug log
-            }
-        } else {
-             // Try alternative path without /qt/qrc/
+        if (!m_image.load(resPath)) {
+             // Try alternative without /qt/qrc/
              QString altPath = resPath;
              altPath.replace("/qt/qrc/", "/");
-             if (QFile::exists(altPath)) {
-                 if (m_image.load(altPath)) {
-                     // qInfo() << "Successfully loaded alt qrc icon:" << altPath; // Removed debug log
+             if (!m_image.load(altPath)) {
+                 // Final attempt: Search for the logo in resources
+                 QDirIterator it(":", QDirIterator::Subdirectories);
+                 while (it.hasNext()) {
+                     QString found = it.next();
+                     if (found.endsWith("/logo.png") && m_image.load(found)) {
+                         break;
+                     }
                  }
-             } else {
-                 qWarning() << "Resource does not exist:" << resPath << "or" << altPath;
              }
         }
     } else if (m_id.startsWith(":/")) {

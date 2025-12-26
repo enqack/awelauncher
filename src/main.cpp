@@ -285,8 +285,11 @@ int main(int argc, char *argv[])
         } else {
             // Check embedded resource (Nix / Installed mode)
             QString resPath = ":/qt/qrc/awelauncher/assets/logo.png";
+            QString altPath = ":/awelauncher/assets/logo.png";
             if (QFile::exists(resPath)) {
-                 defaultIcon = "qrc" + resPath.mid(1); // "qrc:/qt/..."
+                 defaultIcon = "qrc" + resPath; // "qrc:/qt/..."
+            } else if (QFile::exists(altPath)) {
+                 defaultIcon = "qrc" + altPath; // "qrc:/awelauncher/..."
             } else {
                 // Final fallback to system icon if installed
                 defaultIcon = "awelaunch";
