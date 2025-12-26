@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.4] - 2025-12-26
+
+### Changed
+- **Version**: Bumped version to 0.4.4
+- **Documentation**: Updated README.md
+
+## [0.4.3] - 2025-12-26
+
+### Fixed
+- **Nix Build**: Fixed build failure by adding missing `FilterUtils` and `TerminalUtils` to `CMakeLists.txt`.
+- **SSH Launcher**: Fixed `xdg-terminal-exec` and `wezterm` launching issues by correctly handling arguments and flags (now allows complex commands via `sh -c`).
+- **Dev Tools**: Updated `bump_version.sh` to track `CHANGELOG.md` version consistency.
+
 ## [0.4.2] - 2025-12-26
 
 ### Fixed

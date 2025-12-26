@@ -1,6 +1,6 @@
 # awelauncher
 
-[![Version](https://img.shields.io/badge/version-0.4.2-blue.svg)](VERSION)
+[![Version](https://img.shields.io/badge/version-0.4.4-blue.svg)](VERSION)
 [![License](https://img.shields.io/badge/license-BSD--3--Clause-green.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Wayland-orange.svg)](https://wayland.freedesktop.org/)
 [![Qt](https://img.shields.io/badge/Qt-6-blue?logo=qt)](https://www.qt.io/)
@@ -8,7 +8,10 @@
 [![Nix](https://img.shields.io/badge/Nix-Flake-blueviolet.svg?logo=nixos)](flake.nix)
 
 > **Run in awe!** 🚀
+>
 > A fast, minimal Wayland launcher built with Qt6 and QtQuick.
+>
+> A system engineer’s launcher.
 
 ## Features
 
