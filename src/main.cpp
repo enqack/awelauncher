@@ -225,17 +225,6 @@ int main(int argc, char *argv[])
     // --- Provider Aggregation Logic ---
     
     Config::ProviderSet activeSet;
-    // Debug: List resources
-    qInfo() << "Embedded Resources:";
-    QDirIterator it(":", QDirIterator::Subdirectories);
-    while (it.hasNext()) {
-        QString res = it.next();
-        if (res.contains("logo")) {
-            qInfo() << "  Found logo resource:" << res;
-        }
-    }
-    
-    // Resolve Active Set overrides
     bool usingSet = false;
     
     // 1. Determine which Set to use
@@ -287,26 +276,19 @@ int main(int argc, char *argv[])
     QString defaultIcon = "search";
     QString appIconPath = QCoreApplication::applicationDirPath() + "/assets/logo.png";
     if (QFile::exists(appIconPath)) {
-        qInfo() << "Using local icon:" << appIconPath;
         defaultIcon = appIconPath;
     } else {
         // Check current working directory (dev mode)
         appIconPath = QDir::currentPath() + "/assets/logo.png";
         if (QFile::exists(appIconPath)) {
-            qInfo() << "Using CWD icon:" << appIconPath;
             defaultIcon = appIconPath;
         } else {
             // Check embedded resource (Nix / Installed mode)
             QString resPath = ":/qt/qrc/awelauncher/assets/logo.png";
-            QString altPath = ":/awelauncher/assets/logo.png";
             if (QFile::exists(resPath)) {
-                 qInfo() << "Using embedded resource icon (qrc)";
-                 defaultIcon = "qrc" + resPath.mid(1);
-            } else if (QFile::exists(altPath)) {
-                 qInfo() << "Using alt embedded resource icon";
-                 defaultIcon = "qrc" + altPath.mid(1);
+                 defaultIcon = "qrc" + resPath.mid(1); // "qrc:/qt/..."
             } else {
-                qWarning() << "No logo found! Falling back to 'awelaunch' system icon";
+                // Final fallback to system icon if installed
                 defaultIcon = "awelaunch";
             }
         }
