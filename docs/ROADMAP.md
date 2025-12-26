@@ -10,9 +10,10 @@ Based on the [Strategic Analysis](https://github.com/enqack/awelauncher/issues/.
 ## Tier 1: Quality & Workflow Wins (MVP Candidates)
 *Focus: Sharpening the tool without changing its identity.*
 
-- [ ] **Provider Sets**
+- [x] **Provider Sets**
   - Define different workflows (e.g., `--set dev`, `--set web`) with distinct provider lists/ordering.
   - *Goal:* Eliminate config-switching friction.
+  - *Status:* Shipped in v0.4.0.
 - [ ] **Pinned Results & Aliases**
   - Allow explicit pinning of items to the top of results.
   - *Goal:* Muscle memory for frequent actions.
@@ -50,7 +51,7 @@ Based on the [Strategic Analysis](https://github.com/enqack/awelauncher/issues/.
 - [ ] **Scripting API**
   - Stable CLI for querying/controlling the launcher.
 - [ ] **Cross-Compositor Abstraction**
-  - Hyprland/Sway specific enhancements behind a stable interface.
+  - Hyprland/Sway/Niri/Mangowc specific enhancements behind a stable interface.
 
 ---
 

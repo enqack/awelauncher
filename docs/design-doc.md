@@ -4,7 +4,7 @@
 
 A wofi-simple launcher with **Qt-grade sizing/styling/icons**, implemented with **QtQuick only**, Wayland-first, deterministic, fast.
 
-### Implementation Status (v0.3 - Complete)
+### Implementation Status (v0.4.2 - Current)
 
 **✅ Fully Implemented:**
 - **CLI/Metadata**: unified versioning (`VERSION` file), `--version` flag, and config/theme overrides.
@@ -15,6 +15,10 @@ A wofi-simple launcher with **Qt-grade sizing/styling/icons**, implemented with 
   - **run**: PATH executables.
   - **window**: window switcher with activation, actions (close, fullscreen, etc.).
   - **dmenu**: stdin/stdout pipe mode.
+  - **top**: process monitoring (CPU/Memory sorting) (New in 0.4.0).
+  - **kill**: process killer (New in 0.4.0).
+  - **ssh**: SSH host launcher (New in 0.4.0).
+- **Provider Sets**: Group providers, prompts, and filters into named sets (e.g. `dev`, `media`) (Tier 1).
 - **Monitor Selection**: secondary selection flow (`Ctrl+M`) to move windows between outputs.
 - **Advanced Positioning**: anchoring (top/bottom/left/right/center), margins, and CLI geometry overrides.
 - **Matching**: fuzzy with visual highlighting + MRU boost scoring.
@@ -25,14 +29,9 @@ A wofi-simple launcher with **Qt-grade sizing/styling/icons**, implemented with 
 - Multiple actions per item menu.
 - Prefix/substring matching modes (fuzzy covers most use cases).
 
-**🚧 Planned (v0.4.0):**
-- **Modern Protocol Support**: Implement `ext-foreign-toplevel-list-v1` as primary with `wlr` fallback.
-- **Plugin System**: External provider support.
+**🚧 Planned (v0.5+):**
+- **Plugin System**: External provider binary API.
 - **Workspace movement** (requires protocol support).
-
-**🔮 Future (v0.3+):**
-- **Workspace movement** (requires protocol support)
-- **Plugin System**
 
 ### Core principles
 
@@ -55,7 +54,8 @@ A wofi-simple launcher with **Qt-grade sizing/styling/icons**, implemented with 
 
 ## CLI contract (Stable)
 
-* `awelaunch --show drun|run|window|dmenu`
+* `awelaunch --show drun|run|window|top|kill|ssh|dmenu`
+* `awelaunch --set <provider_set_name>`
 * `awelaunch --version`
 * `awelaunch --theme <name>`
 * `awelaunch --prompt "…"`
@@ -63,6 +63,7 @@ A wofi-simple launcher with **Qt-grade sizing/styling/icons**, implemented with 
 * `awelaunch --width <int> --height <int>`
 * `awelaunch --anchor <center|top|bottom|left|right>`
 * `awelaunch --margin <int>`
+* `awelaunch --overlay` (Force overlay layer)
 * `awelaunch --debug`
 
 Design intent: the CLI is *stable and scriptable*, not a dumping ground.
