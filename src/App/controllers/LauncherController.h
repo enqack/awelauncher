@@ -29,10 +29,20 @@ public:
 
     explicit LauncherController(QObject *parent = nullptr);
 
+    enum ActionFlag {
+        None = 0,
+        ForceTerminal = 1,
+        HoldTerminal = 2
+    };
+    Q_ENUM(ActionFlag)
+
+    // Q_PROPERTY(SelectionMode selectionMode READ selectionMode NOTIFY selectionModeChanged)
+    // Removed Q_PROPERTY comment? No, just keep flow clean.
+
     /** @brief Filters the current model based on search text. */
     Q_INVOKABLE void filter(const QString &text);
     /** @brief Activates the item at the specified index. */
-    Q_INVOKABLE void activate(int index);
+    Q_INVOKABLE void activate(int index, int flags = 0);
     
     /** @brief Closes the window at the specified index (window mode only). */
     Q_INVOKABLE void closeWindow(int index);

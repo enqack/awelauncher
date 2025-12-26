@@ -11,7 +11,7 @@ Rectangle {
     signal closeRequested()
     signal navigateDown()
     signal navigateUp()
-    signal activateCurrent()
+    signal activateCurrent(int flags)
     signal searchChanged(string text)
     
     property alias text: searchInput.text
@@ -27,7 +27,6 @@ Rectangle {
         spacing: AppTheme.padding / 2
         
         // Context Icon
-        // Context Icon
         Image {
             id: contextIcon
             source: "image://icon/" + (cliIcon !== "" ? cliIcon : "search")
@@ -41,8 +40,6 @@ Rectangle {
             sourceSize.width: AppTheme.fontSize * 2 // Load higher quality
             sourceSize.height: AppTheme.fontSize * 2
             fillMode: Image.PreserveAspectFit
-            
-            // Fallback logic handled by provider
         }
 
         // Search Input
@@ -83,7 +80,11 @@ Rectangle {
                         navigateUp()
                         event.accepted = true
                     } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
-                        activateCurrent()
+                        var flags = 0
+                        if (event.modifiers & Qt.ShiftModifier) flags |= 1 // ForceTerminal
+                        if (event.modifiers & Qt.ControlModifier) flags |= 2 // HoldTerminal
+                        
+                        activateCurrent(flags)
                         event.accepted = true
                     }
                 }

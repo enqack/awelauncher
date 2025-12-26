@@ -38,7 +38,7 @@ void LauncherController::filter(const QString &text)
     }
 }
 
-void LauncherController::activate(int index)
+void LauncherController::activate(int index, int flags)
 {
     qDebug() << "Activate requested for index:" << index;
     if (!m_model) return;
@@ -92,7 +92,9 @@ void LauncherController::activate(int index)
         }
     }
     
-    bool isTerminal = m_model->data(modelIndex, LauncherModel::TerminalRole).toBool();
+    bool forceTerm = (flags & ForceTerminal);
+    bool holdTerm = (flags & HoldTerminal);
+    bool isTerminal = m_model->data(modelIndex, LauncherModel::TerminalRole).toBool() || forceTerm || holdTerm;
     QString program;
     QStringList args;
 
@@ -112,7 +114,19 @@ void LauncherController::activate(int index)
         
         if (term.isEmpty()) term = "x-terminal-emulator";
         program = term;
-        args << "-e" << exec;
+        
+        if (holdTerm) {
+             // Wrap for holding: sh -c "cmd; read"
+             QString safeExec = exec;
+             safeExec.replace("\"", "\\\""); 
+             QString script = QString("%1; echo; echo 'Press Enter to close...'; read").arg(safeExec);
+             
+             // Construct args: -e sh -c "script"
+             // This works for terminals that accept -e cmd arg1 arg2 ...
+             args << "-e" << "sh" << "-c" << script;
+        } else {
+             args << "-e" << exec;
+        }
     } else {
         // Direct launch
         QStringList parts = exec.split(' ');

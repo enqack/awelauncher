@@ -12,7 +12,7 @@ public:
     explicit MockController(QObject* parent = nullptr) : QObject(parent) {}
     QString promptOverride() { return ""; }
     Q_INVOKABLE void filter(const QString&) {}
-    Q_INVOKABLE void activate(int) {}
+    Q_INVOKABLE void activate(int, int = 0) {}
 };
 
 class Setup : public QObject

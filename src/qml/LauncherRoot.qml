@@ -122,7 +122,7 @@ Window {
                     onCloseRequested: root.close()
                     onNavigateDown: resultsList.currentIndex = Math.min(resultsList.count - 1, resultsList.currentIndex + 1)
                     onNavigateUp: resultsList.currentIndex = Math.max(0, resultsList.currentIndex - 1)
-                    onActivateCurrent: Controller.activate(resultsList.currentIndex)
+                    onActivateCurrent: (forceTerminal) => Controller.activate(resultsList.currentIndex, forceTerminal)
                     onSearchChanged: (text) => {
                          resultsList.currentIndex = 0
                     }

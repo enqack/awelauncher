@@ -16,8 +16,12 @@ RowLayout {
     }
     Item { Layout.fillWidth: true }
     Text {
-        Layout.maximumWidth: AppTheme.windowWidth * 0.6
-        text: showMode === "window" ? "Ctrl+H for help" : "Enter to select • Esc to close"
+        Layout.maximumWidth: AppTheme.windowWidth * 0.7
+        text: {
+            if (showMode === "window") return "Ctrl+D Close • Ctrl+M Move • Ctrl+H Help"
+            if (showMode === "run" || showMode === "drun") return "Shift+Enter Term • Ctrl+Enter Hold • Enter Run"
+            return "Enter Select • Esc Close"
+        }
         color: Qt.darker(AppTheme.fg, 1.5)
         font.pixelSize: AppTheme.fontSize * 0.7
         elide: Text.ElideRight

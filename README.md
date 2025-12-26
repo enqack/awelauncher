@@ -1,6 +1,6 @@
 # awelauncher
 
-[![Version](https://img.shields.io/badge/version-0.4.0-blue.svg)](VERSION)
+[![Version](https://img.shields.io/badge/version-0.4.1-blue.svg)](VERSION)
 [![License](https://img.shields.io/badge/license-BSD--3--Clause-green.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Wayland-orange.svg)](https://wayland.freedesktop.org/)
 [![Qt](https://img.shields.io/badge/Qt-6-blue?logo=qt)](https://www.qt.io/)
@@ -167,4 +167,4 @@ BSD-3-Clause
 
 ## Credits
 
-Built with Qt6, inspired by wofi and rofi.
+Built with Qt6, inspired by wofi and walker.
