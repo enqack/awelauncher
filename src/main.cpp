@@ -282,6 +282,13 @@ int main(int argc, char *argv[])
         appIconPath = QDir::currentPath() + "/assets/logo.png";
         if (QFile::exists(appIconPath)) {
             defaultIcon = appIconPath;
+        } else {
+            // Check embedded resource (Nix / Installed mode)
+            // Note: qt_add_qml_module adds it under qrc:/qt/qrc/URI/path
+            appIconPath = "qrc:/qt/qrc/awelauncher/assets/logo.png";
+            if (QFile::exists(":" + appIconPath.mid(3))) { // Qt checks ":" prefix for resources
+                 defaultIcon = appIconPath;
+            }
         }
     }
 

@@ -138,6 +138,7 @@ qt_add_qml_module(awelaunch
         src/qml/Footer.qml
         src/qml/HelpOverlay.qml
     RESOURCES
+        assets/logo.png
         examples/config/config.yaml
         examples/config/themes/default.yaml
         examples/config/themes/catppuccin.yaml

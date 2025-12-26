@@ -1,6 +1,6 @@
 # awelauncher
 
-![awelauncher logo](assets/logo.png)
+<img src="assets/logo.png" width="128" alt="awelauncher logo">
 
 [![Version](https://img.shields.io/badge/version-0.4.4-blue.svg)](VERSION)
 [![License](https://img.shields.io/badge/license-BSD--3--Clause-green.svg)](LICENSE)
@@ -59,7 +59,11 @@ cmake ..
 make
 ```
 
-## Installation
+## Branding
+
+The project logo is available in multiple sizes in the [`assets/`](assets/) directory, ranging from 16x16 to 512x512 pixels, for use in various system integrations.
+
+<img src="assets/logo_128.png" width="96" alt="awelauncher branding">
 
 ```bash
 # From build directory
