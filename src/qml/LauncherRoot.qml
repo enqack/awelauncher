@@ -27,12 +27,10 @@ Window {
         return a;
     }
     
-    KWayland.Window.margins: ({
-        "top": (AppTheme.windowAnchor === "top" ? AppTheme.windowMargin : 0),
-        "bottom": (AppTheme.windowAnchor === "bottom" ? AppTheme.windowMargin : 0),
-        "left": (AppTheme.windowAnchor === "left" ? AppTheme.windowMargin : 0),
-        "right": (AppTheme.windowAnchor === "right" ? AppTheme.windowMargin : 0)
-    })
+    KWayland.Window.margins.top: (AppTheme.windowAnchor === "top" ? AppTheme.windowMargin : 0)
+    KWayland.Window.margins.bottom: (AppTheme.windowAnchor === "bottom" ? AppTheme.windowMargin : 0)
+    KWayland.Window.margins.left: (AppTheme.windowAnchor === "left" ? AppTheme.windowMargin : 0)
+    KWayland.Window.margins.right: (AppTheme.windowAnchor === "right" ? AppTheme.windowMargin : 0)
 
     // Direct sizing
     width: AppTheme.windowWidth
@@ -77,6 +75,7 @@ Window {
     }
 
     Component.onCompleted: {
+        if (debugMode) console.log("AppTheme Debug - Anchor:", AppTheme.windowAnchor, "Margin:", AppTheme.windowMargin, "Layer:", AppTheme.windowLayer)
         // Immediate attempt
         root.requestActivate()
         searchBar.forceInputFocus()
@@ -107,7 +106,7 @@ Window {
         // Apply opacity to the background color instead of the window
         color: Qt.rgba(AppTheme.bg.r, AppTheme.bg.g, AppTheme.bg.b, AppTheme.opacity)
         radius: AppTheme.radius
-        border.color: AppTheme.border
+        border.color: root.active ? AppTheme.accent : AppTheme.border
         border.width: AppTheme.borderWidth
         
         ColumnLayout {

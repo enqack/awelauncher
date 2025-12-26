@@ -198,7 +198,7 @@ void Config::validateKeys() {
         if (window.IsMap()) {
             for (YAML::const_iterator it = window.begin(); it != window.end(); ++it) {
                 QString key = QString::fromStdString(it->first.as<std::string>());
-                if (key != "width" && key != "height") {
+                if (key != "width" && key != "height" && key != "anchor" && key != "margin" && key != "layer") {
                     qWarning() << "[Validation] Unknown key in 'window':" << key;
                 }
             }
@@ -248,6 +248,12 @@ QString Config::getString(const QString& key, const QString& defaultValue) const
 
 int Config::getInt(const QString& key, int defaultValue) const
 {
+    if (m_overrides.contains(key)) {
+        bool ok;
+        int val = m_overrides.value(key).toInt(&ok);
+        if (ok) return val;
+    }
+
     YAML::Node node = resolve(m_config, key);
     if (node.IsDefined() && !node.IsNull()) {
         try {

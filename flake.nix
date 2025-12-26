@@ -69,6 +69,8 @@
               qt6.wrapQtAppsHook
               go-task
               doxygen
+              weston
+              grim
             ];
 
             buildInputs = with pkgs; [
