@@ -33,6 +33,7 @@
               qt6.qtbase
               qt6.qtdeclarative
               qt6.qtwayland
+              qt6.qtsvg
               kdePackages.layer-shell-qt
               wayland
               wayland-protocols
@@ -43,6 +44,11 @@
               "--prefix QML2_IMPORT_PATH : ${pkgs.kdePackages.layer-shell-qt}/lib/qt-6/qml"
               "--prefix XDG_DATA_DIRS : ${placeholder "out"}/share"
             ];
+
+            postInstall = ''
+              substituteInPlace $out/share/applications/awelaunch.desktop \
+                --replace "Icon=awelaunch" "Icon=$out/share/pixmaps/awelaunch.png"
+            '';
           };
           awelauncher = self.packages.${system}.default;
         }

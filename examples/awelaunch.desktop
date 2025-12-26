@@ -3,7 +3,7 @@ Type=Application
 Name=Awelauncher
 Comment=Run in awe!
 Exec=awelaunch %u
-Icon=/usr/share/pixmaps/awelaunch.png
+Icon=awelaunch
 # Local dev path: assets/logo.png
 Terminal=false
 Categories=Utility;

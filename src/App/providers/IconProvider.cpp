@@ -54,11 +54,33 @@ void IconResponse::run()
     
     // 1. Try absolute path or resource
     if (m_id.startsWith("/")) {
-        m_image.load(m_id);
+        if (!m_image.load(m_id)) {
+             qWarning() << "Failed to load absolute icon path:" << m_id;
+        }
     } else if (m_id.startsWith("qrc:/")) {
-        m_image.load(":" + m_id.mid(4));
+        QString resPath = ":" + m_id.mid(4);
+        if (QFile::exists(resPath)) {
+            if (!m_image.load(resPath)) {
+                qWarning() << "Failed to load qrc icon:" << resPath;
+            } else {
+                qInfo() << "Successfully loaded qrc icon:" << resPath;
+            }
+        } else {
+             // Try alternative path without /qt/qrc/
+             QString altPath = resPath;
+             altPath.replace("/qt/qrc/", "/");
+             if (QFile::exists(altPath)) {
+                 if (m_image.load(altPath)) {
+                     qInfo() << "Successfully loaded alt qrc icon:" << altPath;
+                 }
+             } else {
+                 qWarning() << "Resource does not exist:" << resPath << "or" << altPath;
+             }
+        }
     } else if (m_id.startsWith(":/")) {
-        m_image.load(m_id);
+        if (!m_image.load(m_id)) {
+             qWarning() << "Failed to load resource icon:" << m_id;
+        }
     }
     
     // 2. Try system theme

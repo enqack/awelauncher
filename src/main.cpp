@@ -43,8 +43,9 @@
 
 #include <QStandardPaths>
 #include <QDir>
-#include <QFileInfo>
+#include <QDirIterator>
 #include <QDebug>
+#include <QIcon>
 #include "App/utils/Config.h"
 #include "App/utils/FilterUtils.h"
 #include "App/utils/Constants.h"
@@ -224,7 +225,17 @@ int main(int argc, char *argv[])
     // --- Provider Aggregation Logic ---
     
     Config::ProviderSet activeSet;
-    activeSet.name = "adhoc";
+    // Debug: List resources
+    qInfo() << "Embedded Resources:";
+    QDirIterator it(":", QDirIterator::Subdirectories);
+    while (it.hasNext()) {
+        QString res = it.next();
+        if (res.contains("logo")) {
+            qInfo() << "  Found logo resource:" << res;
+        }
+    }
+    
+    // Resolve Active Set overrides
     bool usingSet = false;
     
     // 1. Determine which Set to use
@@ -276,24 +287,33 @@ int main(int argc, char *argv[])
     QString defaultIcon = "search";
     QString appIconPath = QCoreApplication::applicationDirPath() + "/assets/logo.png";
     if (QFile::exists(appIconPath)) {
+        qInfo() << "Using local icon:" << appIconPath;
         defaultIcon = appIconPath;
     } else {
         // Check current working directory (dev mode)
         appIconPath = QDir::currentPath() + "/assets/logo.png";
         if (QFile::exists(appIconPath)) {
+            qInfo() << "Using CWD icon:" << appIconPath;
             defaultIcon = appIconPath;
         } else {
             // Check embedded resource (Nix / Installed mode)
-            // Note: qt_add_qml_module adds it under qrc:/qt/qrc/URI/path
             QString resPath = ":/qt/qrc/awelauncher/assets/logo.png";
+            QString altPath = ":/awelauncher/assets/logo.png";
             if (QFile::exists(resPath)) {
-                 defaultIcon = "qrc" + resPath.mid(1); // "qrc:/qt/..."
+                 qInfo() << "Using embedded resource icon (qrc)";
+                 defaultIcon = "qrc" + resPath.mid(1);
+            } else if (QFile::exists(altPath)) {
+                 qInfo() << "Using alt embedded resource icon";
+                 defaultIcon = "qrc" + altPath.mid(1);
             } else {
-                // Final fallback to system icon if installed
+                qWarning() << "No logo found! Falling back to 'awelaunch' system icon";
                 defaultIcon = "awelaunch";
             }
         }
     }
+
+    // Set Window Icon for taskbars / app switchers
+    app.setWindowIcon(QIcon::fromTheme(defaultIcon, QIcon(":/qt/qrc/awelauncher/assets/logo.png")));
 
     engine.rootContext()->setContextProperty("cliIcon", activeSet.icon.isEmpty() ? defaultIcon : activeSet.icon);
 
