@@ -1,8 +1,6 @@
 # awelauncher
 
-<p align="center">
-  <img src="assets/logo.png" width="128" height="128" alt="awelauncher logo">
-</p>
+![awelauncher logo](assets/logo.png)
 
 [![Version](https://img.shields.io/badge/version-0.4.4-blue.svg)](VERSION)
 [![License](https://img.shields.io/badge/license-BSD--3--Clause-green.svg)](LICENSE)

@@ -272,7 +272,20 @@ int main(int argc, char *argv[])
     if (!activeSet.prompt.isEmpty()) {
         engine.rootContext()->setContextProperty("cliPrompt", activeSet.prompt);
     }
-    engine.rootContext()->setContextProperty("cliIcon", activeSet.icon.isEmpty() ? "search" : activeSet.icon);
+    // 2. Resolve default icon (Logo fallback)
+    QString defaultIcon = "search";
+    QString appIconPath = QCoreApplication::applicationDirPath() + "/assets/logo.png";
+    if (QFile::exists(appIconPath)) {
+        defaultIcon = appIconPath;
+    } else {
+        // Check current working directory (dev mode)
+        appIconPath = QDir::currentPath() + "/assets/logo.png";
+        if (QFile::exists(appIconPath)) {
+            defaultIcon = appIconPath;
+        }
+    }
+
+    engine.rootContext()->setContextProperty("cliIcon", activeSet.icon.isEmpty() ? defaultIcon : activeSet.icon);
 
     // Apply layout overrides if present
     if (usingSet) {

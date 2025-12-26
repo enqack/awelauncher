@@ -160,10 +160,10 @@ Window {
                         
                         Image {
                             Layout.alignment: Qt.AlignHCenter
-                            source: "image://icon/face-sad" // or "dialog-information"
-                            sourceSize.width: 64
-                            sourceSize.height: 64
-                            opacity: 0.5
+                            source: "image://icon/" + cliIcon
+                            sourceSize.width: 96
+                            sourceSize.height: 96
+                            opacity: 0.3
                         }
                         
                         Text {
