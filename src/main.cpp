@@ -285,9 +285,12 @@ int main(int argc, char *argv[])
         } else {
             // Check embedded resource (Nix / Installed mode)
             // Note: qt_add_qml_module adds it under qrc:/qt/qrc/URI/path
-            appIconPath = "qrc:/qt/qrc/awelauncher/assets/logo.png";
-            if (QFile::exists(":" + appIconPath.mid(3))) { // Qt checks ":" prefix for resources
-                 defaultIcon = appIconPath;
+            QString resPath = ":/qt/qrc/awelauncher/assets/logo.png";
+            if (QFile::exists(resPath)) {
+                 defaultIcon = "qrc" + resPath.mid(1); // "qrc:/qt/..."
+            } else {
+                // Final fallback to system icon if installed
+                defaultIcon = "awelaunch";
             }
         }
     }

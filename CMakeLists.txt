@@ -146,6 +146,7 @@ qt_add_qml_module(awelaunch
 
 install(TARGETS awelaunch DESTINATION bin)
 install(FILES examples/awelaunch.desktop DESTINATION share/applications)
+install(FILES assets/logo.png RENAME awelaunch.png DESTINATION share/pixmaps)
 
 # Testing
 option(BUILD_TESTING "Build tests" ON)

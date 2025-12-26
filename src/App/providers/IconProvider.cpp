@@ -52,8 +52,12 @@ void IconResponse::run()
     
     // Generate icon (cache miss)
     
-    // 1. Try absolute path
+    // 1. Try absolute path or resource
     if (m_id.startsWith("/")) {
+        m_image.load(m_id);
+    } else if (m_id.startsWith("qrc:/")) {
+        m_image.load(":" + m_id.mid(4));
+    } else if (m_id.startsWith(":/")) {
         m_image.load(m_id);
     }
     
