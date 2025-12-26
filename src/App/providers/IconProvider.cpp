@@ -5,6 +5,8 @@
 #include <QStandardPaths>
 #include <QDir>
 #include <QCryptographicHash>
+#include <QFileInfo>
+#include <QDateTime>
 #include <QIcon>
 #include <QPixmap>
 
@@ -31,8 +33,11 @@ void IconResponse::run()
     QString cacheDir = QStandardPaths::writableLocation(QStandardPaths::CacheLocation) + "/awelauncher/icons";
     QDir().mkpath(cacheDir);
     
-    // Create cache key from id + size
+    // Create cache key from id + size + timestamp (if file)
     QString cacheKey = QString("%1_%2").arg(m_id).arg(size);
+    if (m_id.startsWith("/") && QFile::exists(m_id)) {
+        cacheKey += QString::number(QFileInfo(m_id).lastModified().toMSecsSinceEpoch());
+    }
     QByteArray hash = QCryptographicHash::hash(cacheKey.toUtf8(), QCryptographicHash::Md5).toHex();
     QString cachePath = cacheDir + "/" + QString(hash) + ".png";
     
