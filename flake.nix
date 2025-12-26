@@ -77,6 +77,8 @@
               doxygen
               weston
               grim
+              nodePackages.markdownlint-cli
+              nodePackages.prettier
             ];
 
             buildInputs = with pkgs; [
@@ -112,6 +114,8 @@
               weston
               grim
               bash
+              qt6.qtbase
+              qt6.qtdeclarative
               self.packages.${system}.default # awelauncher
             ];
             
@@ -136,6 +140,28 @@
               
               ./run_headless.sh
               touch $out/passed
+            '';
+          };
+
+          markdown_lint = pkgs.stdenv.mkDerivation {
+            name = "awelauncher-markdown-lint";
+            src = ./.;
+            nativeBuildInputs = [ pkgs.nodePackages.markdownlint-cli ];
+            dontBuild = true;
+            installPhase = "touch $out";
+            doCheck = true;
+            checkPhase = let
+              lintConfig = {
+                default = true;
+                MD024 = false;
+                MD030 = false;
+                MD033 = false;
+                MD040 = false;
+                MD041 = false;
+              };
+              configFile = pkgs.writeText "markdownlint.json" (builtins.toJSON lintConfig);
+            in ''
+              markdownlint "**/*.md" --ignore node_modules --config ${configFile}
             '';
           };
         }

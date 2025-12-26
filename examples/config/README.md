@@ -24,6 +24,7 @@ cp examples/config/themes/* ~/.config/awelauncher/themes/
 Theme files define colors and layout properties:
 
 **Colors:**
+
 - `bg`: Background color
 - `fg`: Foreground/text color
 - `accent`: Accent color for highlights
@@ -31,6 +32,7 @@ Theme files define colors and layout properties:
 - `muted`: Muted/secondary text color
 
 **Layout:**
+
 - `radius`: Corner radius (px)
 - `padding`: Window padding (px)
 - `rowHeight`: Result row height (px)
@@ -40,5 +42,5 @@ Theme files define colors and layout properties:
 
 ## Base16 System Theme
 
-Set `theme: "auto"` to automatically use your base16-shell colors.
-Requires `BASE16_COLOR_*_HEX` environment variables.
+Set `theme: "auto"` to automatically use your base16-shell colors. Requires
+`BASE16_COLOR_*_HEX` environment variables.

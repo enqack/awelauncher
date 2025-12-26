@@ -18,15 +18,17 @@
 ## Features
 
 - **Fuzzy search** with visual match highlighting
-- **Multiple modes**: 
+- **Multiple modes**:
   - Desktop apps (`drun`)
   - Command runner (`run`)
   - Window switcher (`window`) - Wayland window management
-  - **Process Manager** (`top`, `kill`) - *New in 0.4.0*
-  - **SSH Launcher** (`ssh`) - *New in 0.4.0*
-- **Provider Sets**: Create custom workflows (e.g., `--set dev`) combining specific providers and filters.
+  - **Process Manager** (`top`, `kill`) - _New in 0.4.0_
+  - **SSH Launcher** (`ssh`) - _New in 0.4.0_
+- **Provider Sets**: Create custom workflows (e.g., `--set dev`) combining
+  specific providers and filters.
 - **Visual Polish**: Context icons, empty state overlays, and smart fallbacks.
-- **Window controls**: Switch, close, fullscreen, maximize, minimize, move to monitor
+- **Window controls**: Switch, close, fullscreen, maximize, minimize, move to
+  monitor
 - **Dmenu compliance**: Scriptable input/output mode (-d)
 - **MRU boost**: Recently used apps/windows appear higher in results
 - **Icon caching**: Async loading with disk cache for instant startup
@@ -48,6 +50,7 @@ make
 ### Manual build
 
 Requirements:
+
 - Qt6 (Quick, Gui, WaylandClient)
 - yaml-cpp
 - CMake 3.16+
@@ -61,7 +64,9 @@ make
 
 ## Branding
 
-The project logo is available in multiple sizes in the [`assets/`](assets/) directory, ranging from 16x16 to 512x512 pixels, for use in various system integrations.
+The project logo is available in multiple sizes in the [`assets/`](assets/)
+directory, ranging from 16x16 to 512x512 pixels, for use in various system
+integrations.
 
 <img src="assets/logo_128.png" width="96" alt="awelauncher branding">
 
@@ -113,7 +118,8 @@ awelaunch --show ssh
 
 ### Provider Sets (Advanced)
 
-Define sets in `config.yaml` to mix providers, filter results, and customize the prompt.
+Define sets in `config.yaml` to mix providers, filter results, and customize the
+prompt.
 
 ```bash
 # Activate 'dev' set (e.g., run + top + ssh)
@@ -139,24 +145,26 @@ echo -e "Option A\nOption B" | awelaunch -d
 ### Keybindings
 
 **All modes:**
+
 - `Esc` - Dismiss launcher
 - `Enter` - Activate selected item
 - `↑/↓` - Navigate results
 - Type to fuzzy search
 
 **Window mode only:**
+
 - `Ctrl+M` - Move window to another monitor
 - `Ctrl+D` - Close window
 - `Ctrl+F` - Toggle fullscreen
 - `Ctrl+X` - Toggle maximize
 - `Ctrl+N` - Toggle minimize
 
-
 ## Architecture
 
-- **Controllers**: `LauncherController` - handles app launching and window actions
+- **Controllers**: `LauncherController` - handles app launching and window
+  actions
 - **Models**: `LauncherModel` - manages items and search filtering
-- **Providers**: 
+- **Providers**:
   - `DesktopFileLoader` - scans .desktop files
   - `IconProvider` - async icon loading
   - `WindowProvider` - Wayland window enumeration and control
