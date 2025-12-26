@@ -56,6 +56,10 @@ add_executable(awelaunch
     src/App/providers/ProcessProvider.h
     src/App/providers/SSHProvider.cpp
     src/App/providers/SSHProvider.h
+    src/App/utils/FilterUtils.cpp
+    src/App/utils/FilterUtils.h
+    src/App/utils/TerminalUtils.cpp
+    src/App/utils/TerminalUtils.h
 )
 
 target_include_directories(awelaunch PRIVATE src)

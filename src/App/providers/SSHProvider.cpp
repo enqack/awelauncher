@@ -30,36 +30,12 @@ std::vector<LauncherItem> SSHProvider::scan(const QString& terminalCmd, bool par
         
         // Determine Terminal Command
         // Priority: Passed cmd (config/xdg) > $TERM
-        QString term = terminalCmd;
-        if (term.isEmpty()) {
-             term = QProcessEnvironment::systemEnvironment().value("TERM", "xterm");
-        }
+        // LauncherController handles terminal wrapping if item.terminal is true.
+        // We just need to provide the raw command.
+        item.exec = "ssh " + host;
+        item.terminal = true;
         
-        // Command execution structure: 
-        // We usually need "term -e ssh host" or similar.
-        // xdg-terminal-exec takes the command as args directly: "xdg-terminal-exec ssh host"
-        // But if it's a raw terminal like "foot", it often needs "-e".
-        // Let's assume the user config provides the full prefix e.g. "foot -e".
-        // If config is EMPTY, we use xdg-terminal-exec if available?
-        // For now, let's construct a "blind" command:
-        // "ssh host" - wait, LauncherController executes via QProcess::startDetached.
-        // It treats `exec` as the program.
-        // So we need to put the full command line in `exec`.
-        
-        // If using default logic:
-        // item.exec = "xdg-terminal-exec ssh " + host;
-        
-        // Let's refine the logic in Controller or here? 
-        // Ideally here.
-        QString sshCmd = "ssh " + host;
-        if (!term.isEmpty()) {
-            item.exec = term + " " + sshCmd;
-        } else {
-            // Fallback to xdg-terminal-exec default
-             item.exec = "xdg-terminal-exec " + sshCmd;
-        }
-        
-        item.terminal = false; // We are launching the terminal wrapper ourselves, so we don't need the runner to wrap it again.
+        // item.terminal handled above
         items.push_back(item);
     };
     

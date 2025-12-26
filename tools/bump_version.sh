@@ -5,6 +5,7 @@ cd "$(dirname "$0")/.."
 
 VERSION_FILE="VERSION"
 README_FILE="README.md"
+CHANGELOG_FILE="CHANGELOG.md"
 
 if [ ! -f "$VERSION_FILE" ]; then
     echo "Error: VERSION file not found!"
@@ -55,10 +56,23 @@ if [ "$1" == "--check" ]; then
     echo "VERSION file:         $CURRENT_VERSION"
     
     if [ -f "$README_FILE" ]; then
-        if grep -q "version-$CURRENT_VERSION-blue.svg" "$README_FILE"; then
-            echo "README.md badge:      MATCH"
+        # Extract version from badge: version-X.Y.Z-blue.svg
+        README_VER=$(grep -o "version-[0-9.]*-blue.svg" "$README_FILE" | head -n1 | sed -E 's/version-(.*)-blue.svg/\1/')
+        if [ "$README_VER" == "$CURRENT_VERSION" ]; then
+            echo "README.md badge:      MATCH ($README_VER)"
         else
-            echo "README.md badge:      MISMATCH"
+            echo "README.md badge:      MISMATCH (Found $README_VER, expected $CURRENT_VERSION)"
+            exit 1
+        fi
+    fi
+
+    if [ -f "$CHANGELOG_FILE" ]; then
+        # Extract version from header: ## [0.4.2]
+        CHANGELOG_VER=$(grep -o "## \[[0-9.]*\]" "$CHANGELOG_FILE" | head -n1 | sed -E 's/## \[(.*)\]/\1/')
+        if [ "$CHANGELOG_VER" == "$CURRENT_VERSION" ]; then
+            echo "CHANGELOG.md:         MATCH ($CHANGELOG_VER)"
+        else
+            echo "CHANGELOG.md:         MISMATCH (Found $CHANGELOG_VER, expected $CURRENT_VERSION)"
             exit 1
         fi
     fi
@@ -101,6 +115,22 @@ else
     echo "Warning: $README_FILE not found, skipping update."
 fi
 
+# Update CHANGELOG.md
+if [ -f "$CHANGELOG_FILE" ]; then
+    TODAY=$(date +%Y-%m-%d)
+    # Insert new version section after the header (assuming standard format)
+    # Finds the first line starting with ## [ and inserts before it, or if not found, appends?
+    # Actually, simpler to insert after line 4 (after the "All notable changes..." block).
+    
+    NEW_ENTRY="## [$SUGGESTED_VERSION] - $TODAY\n\n### Changed\n- Bumped version to $SUGGESTED_VERSION\n"
+    
+    # Insert at line 5
+    sed -i "5i $NEW_ENTRY" "$CHANGELOG_FILE"
+    echo "Updated $CHANGELOG_FILE"
+else
+    echo "Warning: $CHANGELOG_FILE not found, skipping update."
+fi
+
 echo "Version bumped successfully to $SUGGESTED_VERSION"
 
 # Verification
@@ -117,4 +147,12 @@ if [ -f "$README_FILE" ]; then
         exit 1
     fi
 fi
+
+if [ -f "$CHANGELOG_FILE" ]; then
+    if ! grep -q "## \[$SUGGESTED_VERSION\]" "$CHANGELOG_FILE"; then
+        echo "FAILED: CHANGELOG.md does not contain new version header!"
+        exit 1
+    fi
+fi
+
 echo "Verification passed."

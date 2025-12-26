@@ -46,6 +46,8 @@
 #include <QFileInfo>
 #include <QDebug>
 #include "App/utils/Config.h"
+#include "App/utils/FilterUtils.h"
+#include "App/utils/Constants.h"
 
 // Profiling helper
 #define PROFILE_POINT(name) \
@@ -240,7 +242,7 @@ int main(int argc, char *argv[])
     
     // Fallback if no set loaded: Check for --show argument (legacy/ad-hoc mode)
     if (!usingSet) {
-        QString mode = showMode.isEmpty() ? "drun" : showMode;
+        QString mode = showMode.isEmpty() ? Constants::ProviderDrun : showMode;
         
         // Construct an ad-hoc set
         activeSet.providers.append(mode);
@@ -249,18 +251,18 @@ int main(int argc, char *argv[])
         // Special case: if dmenu flag is on, force dmenu provider
         if (parser.isSet(dmenuOption)) {
             activeSet.providers.clear();
-            activeSet.providers.append("dmenu");
-            activeSet.name = "dmenu";
+            activeSet.providers.append(Constants::ProviderDmenu);
+            activeSet.name = Constants::ProviderDmenu;
         }
         
         // Defaults for ad-hoc modes
-        if (activeSet.providers.contains("top")) {
+        if (activeSet.providers.contains(Constants::ProviderTop)) {
             activeSet.prompt = "Top > ";
             activeSet.icon = "utilities-system-monitor";
-        } else if (activeSet.providers.contains("kill")) {
+        } else if (activeSet.providers.contains(Constants::ProviderKill)) {
             activeSet.prompt = "Kill > ";
             activeSet.icon = "process-stop"; // or application-exit
-        } else if (activeSet.providers.contains("ssh")) {
+        } else if (activeSet.providers.contains(Constants::ProviderSSH)) {
             activeSet.prompt = "SSH > ";
             activeSet.icon = "network-server"; // or computer
         }
@@ -288,15 +290,15 @@ int main(int argc, char *argv[])
     std::vector<LauncherItem> aggregatedItems;
     
     for (const QString& providerName : activeSet.providers) {
-        if (providerName == "run") {
+        if (providerName == Constants::ProviderRun) {
             auto items = PathProvider::scan();
             aggregatedItems.insert(aggregatedItems.end(), items.begin(), items.end());
         } 
-        else if (providerName == "drun") {
+        else if (providerName == Constants::ProviderDrun) {
             auto items = DesktopProvider::scan();
             aggregatedItems.insert(aggregatedItems.end(), items.begin(), items.end());
         }
-        else if (providerName == "top") {
+        else if (providerName == Constants::ProviderTop) {
             int limit = Config::instance().getInt("top.limit", 10);
             QString sortStr = Config::instance().getString("top.sort", "cpu");
             ProcessProvider::SortMode sort = (sortStr == "memory") ? ProcessProvider::MEMORY : ProcessProvider::CPU;
@@ -304,19 +306,19 @@ int main(int argc, char *argv[])
             auto items = ProcessProvider::scan(true, limit, sort, false);
             aggregatedItems.insert(aggregatedItems.end(), items.begin(), items.end());
         }
-        else if (providerName == "kill") {
+        else if (providerName == Constants::ProviderKill) {
             bool showSystem = Config::instance().getString("kill.show_system", "false") == "true";
             // For kill mode, we list ALL (limit -1), sorted by name? Or Memory? Default to Memory for now strictly to be useful.
             auto items = ProcessProvider::scan(false, -1, ProcessProvider::MEMORY, showSystem);
             aggregatedItems.insert(aggregatedItems.end(), items.begin(), items.end());
         }
-        else if (providerName == "ssh") {
+        else if (providerName == Constants::ProviderSSH) {
             QString termCmd = Config::instance().getString("ssh.terminal", "");
             bool parseKnown = Config::instance().getString("ssh.parse_known_hosts", "true") == "true";
             auto items = SSHProvider::scan(termCmd, parseKnown);
             aggregatedItems.insert(aggregatedItems.end(), items.begin(), items.end());
         }
-        else if (providerName == "window") {
+        else if (providerName == Constants::ProviderWindow) {
             static WindowProvider* wp = nullptr; 
             if (!wp) {
                 wp = new WindowProvider(&app);
@@ -330,7 +332,7 @@ int main(int argc, char *argv[])
                 }
             }
         }
-        else if (providerName == "dmenu") {
+        else if (providerName == Constants::ProviderDmenu) {
             StdinProvider* stdinProvider = new StdinProvider(&app);
             QObject::connect(stdinProvider, &StdinProvider::itemsChanged, &model, [&model, stdinProvider](){
                 auto items = stdinProvider->getItems();
@@ -348,24 +350,9 @@ int main(int argc, char *argv[])
          for (const auto& item : aggregatedItems) {
              bool keep = true;
              
-             // Regex helper
-             auto matches = [](const QString& text, const QStringList& rules) {
-                 for (const auto& rule : rules) {
-                     if (rule.startsWith("/") && rule.endsWith("/")) {
-                         // Regex
-                         QString pattern = rule.mid(1, rule.length()-2);
-                         if (QRegularExpression(pattern).match(text).hasMatch()) return true;
-                     } else {
-                         // Substring
-                         if (text.contains(rule, Qt::CaseInsensitive)) return true;
-                     }
-                 }
-                 return false;
-             };
-             
              // Check Exclude (High priority)
              if (!activeSet.filter.exclude.isEmpty()) {
-                 if (matches(item.primary, activeSet.filter.exclude) || matches(item.id, activeSet.filter.exclude)) {
+                 if (FilterUtils::matches(item.primary, activeSet.filter.exclude) || FilterUtils::matches(item.id, activeSet.filter.exclude)) {
                      keep = false;
                  }
              }
@@ -373,7 +360,7 @@ int main(int argc, char *argv[])
              // Check Include (if survived exclude)
              if (keep && !activeSet.filter.include.isEmpty()) {
                  bool included = false;
-                 if (matches(item.primary, activeSet.filter.include) || matches(item.id, activeSet.filter.include)) {
+                 if (FilterUtils::matches(item.primary, activeSet.filter.include) || FilterUtils::matches(item.id, activeSet.filter.include)) {
                      included = true;
                  }
                  if (!included) keep = false;

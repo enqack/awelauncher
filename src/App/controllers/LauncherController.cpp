@@ -2,8 +2,9 @@
 #include "../models/LauncherModel.h"
 #include "../utils/MRUTracker.h"
 #include "../providers/WindowProvider.h"
-#include <QDebug>
 #include <signal.h>
+#include "../utils/TerminalUtils.h"
+#include "../utils/Constants.h"
 
 LauncherController::LauncherController(QObject *parent)
     : QObject(parent)
@@ -79,8 +80,8 @@ void LauncherController::activate(int index, int flags)
     if (exec.isEmpty()) return;
     
     // Kill mode: handle "kill:" prefix in exec
-    if (exec.startsWith("kill:")) {
-        QString pidStr = exec.mid(5);
+    if (exec.startsWith(Constants::ProtocolKill)) {
+        QString pidStr = exec.mid(Constants::ProtocolKill.length());
         bool ok;
         int pid = pidStr.toInt(&ok);
         if (ok) {
@@ -99,34 +100,9 @@ void LauncherController::activate(int index, int flags)
     QStringList args;
 
     if (isTerminal) {
-        // Find available terminal
-        QString term;
-        const QStringList terminals = {
-            "gnome-terminal", "konsole", "alacritty", "kitty", "xfce4-terminal", "urxvt", "xterm", "weston-terminal", "foot"
-        };
-
-        for (const auto &t : terminals) {
-            if (!QStandardPaths::findExecutable(t).isEmpty()) {
-                term = t;
-                break;
-            }
-        }
-        
-        if (term.isEmpty()) term = "x-terminal-emulator";
+        QString term = TerminalUtils::findTerminal();
         program = term;
-        
-        if (holdTerm) {
-             // Wrap for holding: sh -c "cmd; read"
-             QString safeExec = exec;
-             safeExec.replace("\"", "\\\""); 
-             QString script = QString("%1; echo; echo 'Press Enter to close...'; read").arg(safeExec);
-             
-             // Construct args: -e sh -c "script"
-             // This works for terminals that accept -e cmd arg1 arg2 ...
-             args << "-e" << "sh" << "-c" << script;
-        } else {
-             args << "-e" << exec;
-        }
+        args = TerminalUtils::wrapCommand(term, exec, holdTerm);
     } else {
         // Direct launch
         QStringList parts = exec.split(' ');
