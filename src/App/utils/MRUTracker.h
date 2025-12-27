@@ -19,5 +19,11 @@ private:
     void load();
     void save();
     
-    QMap<QString, qint64> m_lastUsed; // itemId -> timestamp (ms since epoch)
+    struct HistoryEntry {
+        QString id;
+        int count = 0;
+        qint64 lastUsed = 0;
+    };
+
+    QMap<QString, HistoryEntry> m_history; 
 };

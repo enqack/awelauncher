@@ -11,8 +11,12 @@ Window {
     // LayerShell properties
     KWayland.Window.layer: AppTheme.windowLayer === 2 ? KWayland.Window.LayerOverlay : KWayland.Window.LayerTop
     KWayland.Window.keyboardInteractivity: KWayland.Window.KeyboardInteractivityOnDemand
-    KWayland.Window.screenConfiguration: KWayland.Window.ScreenFromCompositor
+    // Use Compositor placement by default (follow focus), but allow manual override if explicitScreen is set
+    KWayland.Window.screenConfiguration: launcher.explicitScreen ? KWayland.Window.ScreenFromQWindow : KWayland.Window.ScreenFromCompositor
     KWayland.Window.exclusionZone: AppTheme.windowLayer === 2 ? -1 : 0
+    KWayland.Window.scope: "awelauncher"
+    
+    flags: Qt.FramelessWindowHint
     
     KWayland.Window.anchors: {
         var a = 0;
@@ -77,35 +81,33 @@ Window {
     // Manage focus and state when visibility changes
     onVisibleChanged: {
         if (visible) {
-            root.requestActivate()
+            // Standard, safe focus request. 
+            // We removed the aggressively repeating "Enforcer" as it caused crashes during interaction on some compositors.
             searchBar.forceInputFocus()
-            focusTimer.start()
+            launcher.requestFocus() 
+            
+            // Late Focus Attempt (Single Shot) to catch focus if lost during mapping
+            delayedFocus.restart()
+        }
+    }
+    
+    Timer {
+        id: delayedFocus
+        interval: 100
+        repeat: false
+        onTriggered: {
+            if (debugMode) console.log("Delayed Focus Triggered")
+            searchBar.forceInputFocus()
+            launcher.requestFocus()
         }
     }
 
     Component.onCompleted: {
         if (debugMode) console.log("AppTheme Debug - Anchor:", AppTheme.windowAnchor, "Margin:", AppTheme.windowMargin, "Layer:", AppTheme.windowLayer)
-        // Immediate attempt
-        root.requestActivate()
-        searchBar.forceInputFocus()
-        
-        // Delayed attempt to ensure focus after mapping
-        focusTimer.start()
+        // Handled by Enforcer on visible change (which defaults to false, then true via controller)
     }
     
     // ...
-
-    Timer {
-        id: focusTimer
-        interval: 100
-        repeat: false
-        onTriggered: {
-            if (debugMode) console.log("Retrying focus...")
-            root.requestActivate()
-            searchBar.forceInputFocus()
-            root.raise()
-        }
-    }
     
     property bool showHelp: false
 

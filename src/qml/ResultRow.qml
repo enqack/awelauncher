@@ -71,7 +71,7 @@ Item {
     MouseArea {
         anchors.fill: parent
         onClicked: {
-            ListView.view.currentIndex = index
+            if (ListView.view) ListView.view.currentIndex = index
             launcher.activate(index)
         }
     }

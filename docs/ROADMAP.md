@@ -20,18 +20,22 @@ _Focus: Sharpening the tool without changing its identity._
     provider lists/ordering.
   - _Goal:_ Eliminate config-switching friction.
   - _Status:_ Shipped in v0.4.0.
-- [ ] **Pinned Results & Aliases** ([RFC-004](file:///home/sysop/Projects/awelauncher/docs/rfcs/004-pinned-results-aliases.md))
+- [x] **Pinned Results & Aliases** ([RFC-004](file:///home/sysop/Projects/awelauncher/docs/rfcs/004-pinned-results-aliases.md))
   - Allow explicit pinning of items to the top of results.
   - _Goal:_ Muscle memory for frequent actions.
-- [ ] **Smarter Scoring** ([RFC-005](file:///home/sysop/Projects/awelauncher/docs/rfcs/005-smarter-scoring.md))
+  - _Status:_ Implemented in v0.4.4.
+- [x] **Smarter Scoring** ([RFC-005](file:///home/sysop/Projects/awelauncher/docs/rfcs/005-smarter-scoring.md))
   - Hybrid fuzzy: Prefix > Subsequence > Acronym.
   - _Goal:_ More intuitive ranking.
-- [ ] **Enhanced .desktop Handling** ([RFC-006](file:///home/sysop/Projects/awelauncher/docs/rfcs/006-xdg-desktop-enhancements.md))
+  - _Status:_ Implemented in v0.4.4.
+- [x] **Enhanced .desktop Handling** ([RFC-006](file:///home/sysop/Projects/awelauncher/docs/rfcs/006-xdg-desktop-enhancements.md), [RFC-007](file:///home/sysop/Projects/awelauncher/docs/rfcs/007-xdg-categories.md))
   - Respect `Hidden`/`NoDisplay`, parse keywords/categories, support Actions.
   - _Goal:_ Full XDG compliance and cleaner results.
-- [ ] **Unified History** ([RFC-005](file:///home/sysop/Projects/awelauncher/docs/rfcs/005-smarter-scoring.md))
+  - _Status:_ Implemented in v0.4.4.
+- [x] **Unified History** ([RFC-005](file:///home/sysop/Projects/awelauncher/docs/rfcs/005-smarter-scoring.md))
   - Extend MRU to `run` and `dmenu` modes.
   - _Goal:_ Consistent recall across modes.
+  - _Status:_ Implemented in v0.4.4.
 
 ## Tier 2: Power User Features
 
@@ -52,12 +56,14 @@ _Focus: Structured extensibility._
   - Search/paste history.
 - [ ] **Calculator / Unit Conv** ([RFC-010](file:///home/sysop/Projects/awelauncher/docs/rfcs/010-calculator-provider.md))
   - Built-in utility provider.
-- [ ] **Systems Utility Providers** ([RFC-013](file:///home/sysop/Projects/awelauncher/docs/rfcs/013-utility-providers.md))
-  - Top, Kill, Todo, SSH.
+- [x] **Systems Utility Providers** ([RFC-013](file:///home/sysop/Projects/awelauncher/docs/rfcs/013-utility-providers.md))
+  - Top, Kill, SSH.
   - _Goal:_ Replace shell scripts with native speed.
-- [ ] **Visual Polish & UX** ([RFC-014](file:///home/sysop/Projects/awelauncher/docs/rfcs/014-visual-polish.md))
+  - _Status:_ Implemented (Top, Kill, SSH) in v0.4.4.
+- [x] **Visual Polish & UX** ([RFC-014](file:///home/sysop/Projects/awelauncher/docs/rfcs/014-visual-polish.md))
   - Context icons, breadcrumbs, smart empty states.
   - _Goal:_ Professional feel and user guidance.
+  - _Status:_ Implemented in v0.4.4.
 - [x] Draft RFC-003: Monitor Destinations <!-- id: 73 -->
     - [x] Research LayerShell output selection <!-- id: 74 -->
     - [x] Write RFC-003 specification <!-- id: 75 -->

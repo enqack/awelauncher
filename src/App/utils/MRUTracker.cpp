@@ -4,6 +4,7 @@
 #include <QFile>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QJsonArray>
 #include <QDateTime>
 #include <QDebug>
 
@@ -22,52 +23,92 @@ MRUTracker::MRUTracker(QObject *parent)
 void MRUTracker::recordActivation(const QString& itemId)
 {
     qint64 now = QDateTime::currentMSecsSinceEpoch();
-    m_lastUsed[itemId] = now;
+    
+    // Create or update entry
+    HistoryEntry& entry = m_history[itemId];
+    entry.id = itemId;
+    entry.lastUsed = now;
+    entry.count++;
+    
     save();
 }
 
 int MRUTracker::getBoost(const QString& itemId) const
 {
-    if (!m_lastUsed.contains(itemId)) {
+    if (!m_history.contains(itemId)) {
         return 0;
     }
     
-    qint64 lastUsed = m_lastUsed[itemId];
+    const HistoryEntry& entry = m_history[itemId];
     qint64 now = QDateTime::currentMSecsSinceEpoch();
-    qint64 ageMs = now - lastUsed;
+    qint64 ageMs = now - entry.lastUsed;
     
-    // Boost algorithm based on recency
+    int score = 0;
+    
+    // 1. Recency Boost
     if (ageMs < 3600000) {  // < 1 hour
-        return 500;
+        score += 500;
     } else if (ageMs < 86400000) {  // < 1 day
-        return 200;
+        score += 200;
     } else if (ageMs < 604800000) {  // < 1 week
-        return 50;
+        score += 50;
     }
-    return 0;
+    
+    // 2. Frequency Boost (cap at 500)
+    int freqBoost = std::min(entry.count * 10, 500);
+    score += freqBoost;
+    
+    return score;
 }
 
 void MRUTracker::load()
 {
     QString cacheDir = QStandardPaths::writableLocation(QStandardPaths::CacheLocation);
-    QString mruPath = cacheDir + "/awelauncher/mru.json";
+    QString historyPath = cacheDir + "/awelauncher/history.json";
     
-    QFile file(mruPath);
-    if (!file.open(QIODevice::ReadOnly)) {
-        return; // No MRU file yet, that's fine
+    // Migration: Check for old mru.json if history.json doesn't exist
+    if (!QFile::exists(historyPath)) {
+        QString oldMruPath = cacheDir + "/awelauncher/mru.json";
+        if (QFile::exists(oldMruPath)) {
+            qInfo() << "[MRU] Migrating from mru.json to history.json";
+            QFile oldFile(oldMruPath);
+            if (oldFile.open(QIODevice::ReadOnly)) {
+                 QJsonDocument doc = QJsonDocument::fromJson(oldFile.readAll());
+                 if (doc.isObject()) {
+                     QJsonObject obj = doc.object();
+                     for (auto it = obj.begin(); it != obj.end(); ++it) {
+                         HistoryEntry e;
+                         e.id = it.key();
+                         e.lastUsed = it.value().toVariant().toLongLong();
+                         e.count = 1; // Start with count 1
+                         m_history[e.id] = e;
+                     }
+                 }
+                 oldFile.close();
+            }
+            save(); // Save immediately in new format
+            return;
+        }
     }
     
-    QByteArray data = file.readAll();
-    file.close();
-    
-    QJsonDocument doc = QJsonDocument::fromJson(data);
-    if (!doc.isObject()) {
+    QFile file(historyPath);
+    if (!file.open(QIODevice::ReadOnly)) {
         return;
     }
     
-    QJsonObject obj = doc.object();
-    for (auto it = obj.begin(); it != obj.end(); ++it) {
-        m_lastUsed[it.key()] = it.value().toVariant().toLongLong();
+    QJsonDocument doc = QJsonDocument::fromJson(file.readAll());
+    file.close();
+    
+    if (doc.isObject() && doc.object()["history"].isArray()) {
+        QJsonArray arr = doc.object()["history"].toArray();
+        for (const auto& val : arr) {
+            QJsonObject item = val.toObject();
+            HistoryEntry e;
+            e.id = item["id"].toString();
+            e.count = item["count"].toInt();
+            e.lastUsed = static_cast<qint64>(item["last"].toDouble());
+            m_history[e.id] = e;
+        }
     }
 }
 
@@ -75,22 +116,28 @@ void MRUTracker::save()
 {
     QString cacheDir = QStandardPaths::writableLocation(QStandardPaths::CacheLocation);
     QString cachePath = cacheDir + "/awelauncher";
-    
     QDir dir;
     dir.mkpath(cachePath);
     
-    QString mruPath = cachePath + "/mru.json";
+    QString historyPath = cachePath + "/history.json";
     
-    QJsonObject obj;
-    for (auto it = m_lastUsed.begin(); it != m_lastUsed.end(); ++it) {
-        obj[it.key()] = it.value();
+    QJsonArray arr;
+    for (auto it = m_history.begin(); it != m_history.end(); ++it) {
+        QJsonObject item;
+        item["id"] = it.value().id;
+        item["count"] = it.value().count;
+        item["last"] = static_cast<double>(it.value().lastUsed);
+        arr.append(item);
     }
     
-    QJsonDocument doc(obj);
+    QJsonObject root;
+    root["history"] = arr;
     
-    QFile file(mruPath);
+    QJsonDocument doc(root);
+    
+    QFile file(historyPath);
     if (!file.open(QIODevice::WriteOnly)) {
-        qWarning() << "Failed to save MRU data to" << mruPath;
+        qWarning() << "Failed to save history data to" << historyPath;
         return;
     }
     

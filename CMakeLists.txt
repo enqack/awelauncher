@@ -38,6 +38,8 @@ add_executable(awelaunch
     src/App/utils/ThemeScanner.h
     src/App/utils/Config.cpp
     src/App/utils/Config.h
+    src/App/utils/OutputUtils.cpp
+    src/App/utils/OutputUtils.h
     src/App/utils/Profiler.h
     src/App/providers/IconProvider.cpp
     src/App/providers/IconProvider.h

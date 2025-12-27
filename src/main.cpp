@@ -25,6 +25,7 @@
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
 #include <QtQml>
+#include <QWindow>
 #include <QCommandLineParser>
 #include <QElapsedTimer>
 #include <QSurfaceFormat>
@@ -50,6 +51,7 @@
 #include "App/utils/Config.h"
 #include "App/utils/FilterUtils.h"
 #include "App/utils/Constants.h"
+#include "App/utils/OutputUtils.h"
 
 #include "App/utils/Profiler.h"
 
@@ -141,7 +143,13 @@ int main(int argc, char *argv[])
     QCommandLineOption queryOption(QStringList() << "q" << "query", "Query the daemon for results and exit (JSON)", "text");
     parser.addOption(queryOption);
 
-    
+    // RFC-003: Monitor Destinations
+    QCommandLineOption monitorOption(QStringList() << "monitor", "Strategy to select monitor (follow-mouse, follow-focus, or name)", "strategy");
+    parser.addOption(monitorOption);
+
+    QCommandLineOption outputOption(QStringList() << "output", "Target specific output by name (e.g. DP-1)", "name");
+    parser.addOption(outputOption);
+
     parser.process(app);
 
     // Initial Debug / Profiling setup
@@ -340,7 +348,64 @@ int main(int argc, char *argv[])
         });
         APP_PROFILE_POINT(timer, "Daemon Ready (UI Deferred)");
     } else {
+        // RFC-003: Resolve Monitor
+        QString monitorStrategy = parser.value(monitorOption);
+        if (monitorStrategy.isEmpty() && parser.isSet(outputOption)) {
+            monitorStrategy = parser.value(outputOption);
+        }
+        
+        // If strategy is provided and NOT follow-focus, or if we have an output name, it's explicit
+        bool isExplicit = !monitorStrategy.isEmpty() && monitorStrategy != "follow-focus";
+        
+        // Follow-mouse is considered explicit because we calculate it manually via OutputUtils
+        // Wait, if QCursor::pos() is bad, follow-mouse might fall back to primary. 
+        // But if user explicitly ASKED for follow-mouse, we should try to honor it manually if possible,
+        // or let compositor do it if we implemented it via LayerShell.
+        // Actually, LayerShell doesn't have "FollowMouse". So we MUST compute it manually.
+        
+        if (monitorStrategy.isEmpty()) {
+             // Load from config, default to follow-focus
+             QString configMonitor = Config::instance().getString("general.monitor", "follow-focus");
+             if (configMonitor == "follow-focus") isExplicit = false;
+             else {
+                 monitorStrategy = configMonitor; 
+                 isExplicit = true;
+             }
+        }
+        
+        controller->setExplicitScreen(isExplicit);
+
+        QScreen* targetScreen = nullptr;
+        if (isExplicit) {
+            targetScreen = OutputUtils::resolveScreen(monitorStrategy);
+            // If resolution failed (e.g. follow-mouse couldn't find cursor), revert to compositor
+            if (!targetScreen) {
+                if (debugMode) qDebug() << "Monitor resolution failed for strategy:" << monitorStrategy << "- Reverting to Compositor placement";
+                isExplicit = false;
+                controller->setExplicitScreen(false);
+            }
+        }
+
         engine.load(url);
+        
+        if (!engine.rootObjects().isEmpty()) {
+            QWindow *window = qobject_cast<QWindow *>(engine.rootObjects().first());
+            if (window) {
+                controller->setMainWindow(window); // Always pass window for focus handling
+                
+                if (isExplicit && targetScreen) {
+                    window->setScreen(targetScreen);
+                    if (debugMode) qDebug() << "Set window screen to:" << targetScreen->name();
+                }
+            }
+        }
+        
+        // RFC-003: Now verify/force visibility for standalone mode
+        // Since we changed default to false to allow proper screen placement
+        if (!startDaemon) {
+             controller->setVisible(true);
+        }
+
         APP_PROFILE_POINT(timer, "QML loaded");
     }
 

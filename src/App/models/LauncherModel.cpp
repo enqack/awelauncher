@@ -1,7 +1,9 @@
 #include "LauncherModel.h"
 #include "../providers/DesktopFileLoader.h"
 #include "../utils/FuzzyMatcher.h"
+#include "../utils/FuzzyMatcher.h"
 #include "../utils/MRUTracker.h"
+#include "../utils/Config.h"
 #include <algorithm>
 
 LauncherModel::LauncherModel(QObject *parent)
@@ -82,18 +84,71 @@ void LauncherModel::filter(const QString& query)
         };
         
         std::vector<ScoredItem> scoredItems;
+
+        // [RFC-004] Resolve Pins & Aliases
+        auto& config = Config::instance();
+        QStringList pins = config.getGlobalPins();
+        QMap<QString, QString> aliases = config.getGlobalAliases();
+
+        if (auto setOpt = config.getSet(m_setName)) {
+            // Per-set pins take precedence (prepend)
+            QStringList setPins = setOpt->pins;
+            setPins.append(pins); 
+            pins = setPins;
+
+            // Per-set aliases override global
+            auto setAliases = setOpt->aliases;
+            for (auto it = setAliases.begin(); it != setAliases.end(); ++it) {
+                aliases.insert(it.key(), it.value());
+            }
+        }
+
+        // [RFC-004] Alias Handling
+        if (aliases.contains(query)) {
+            QString target = aliases[query];
+            bool foundReal = false;
+            
+            // Try to find the real item
+            for (const auto& item : m_allItems) {
+                if (item.id == target) {
+                    scoredItems.push_back({item, 100000000}); // Massive boost
+                    foundReal = true;
+                    break;
+                }
+            }
+
+            // If not found, inject synthetic alias item
+            if (!foundReal) {
+                LauncherItem aliasItem;
+                aliasItem.id = "alias:" + query;
+                aliasItem.primary = target;
+                aliasItem.secondary = "Alias: " + query;
+                aliasItem.iconKey = "utilities-terminal"; // Generic icon
+                aliasItem.exec = target;
+                aliasItem.terminal = true; 
+                scoredItems.push_back({aliasItem, 100000000});
+            }
+        }
         
         for (const auto& item : m_allItems) {
             // BUG FIX: Filter logic was skipping everything in 'run' mode incorrectly
             // If in 'run' mode, we only want to skip if the item isn't a 'path' or 'run' item
             // For now, let's keep it simple: just match everything in all modes.
             
-            // Try matching against primary, secondary, and id
+            // Try matching against primary, secondary, id, keywords, and categories
             auto primaryMatch = FuzzyMatcher::match(query, item.primary);
             auto secondaryMatch = FuzzyMatcher::match(query, item.secondary);
             auto idMatch = FuzzyMatcher::match(query, item.id);
+            auto keywordsMatch = FuzzyMatcher::match(query, item.keywords);
+            auto categoriesMatch = FuzzyMatcher::match(query, item.categories);
             
-            int bestScore = std::max({primaryMatch.score, secondaryMatch.score, idMatch.score});
+            int bestScore = std::max({
+                primaryMatch.score, 
+                secondaryMatch.score, 
+                idMatch.score, 
+                keywordsMatch.score,
+                categoriesMatch.score
+            });
             
             if (bestScore > 0) {
                 LauncherItem itemWithPositions = item;
@@ -102,13 +157,26 @@ void LauncherModel::filter(const QString& query)
                     itemWithPositions.matchPositions = primaryMatch.positions;
                 } else if (secondaryMatch.score == bestScore) {
                     itemWithPositions.matchPositions = secondaryMatch.positions;
-                } else {
+                } else if (idMatch.score == bestScore) {
                     itemWithPositions.matchPositions = idMatch.positions;
+                } else if (keywordsMatch.score == bestScore) {
+                    itemWithPositions.matchPositions = keywordsMatch.positions;
+                } else {
+                    itemWithPositions.matchPositions = categoriesMatch.positions;
                 }
                 
                 // Apply MRU boost
+                // Apply MRU boost (RFC-005 will refine this, currently simple add)
                 int mruBoost = MRUTracker::instance().getBoost(item.id);
                 int finalScore = bestScore + mruBoost;
+
+                // [RFC-004] Pin Boost
+                // Pins are prioritized by order.
+                int pinIndex = pins.indexOf(item.id);
+                if (pinIndex != -1) {
+                    // Base pin boost 500000 + prioritization based on list order
+                    finalScore += 500000 + ((pins.size() - pinIndex) * 1000);
+                }
                 
                 scoredItems.push_back({itemWithPositions, finalScore});
             }

@@ -14,6 +14,8 @@ struct LauncherItem {
     QString secondary;          /**< Subtext (Description, app_id) */
     QString exec;               /**< Command to execute (if applicable) */
     QString iconKey;            /**< Icon name or path */
+    QString keywords;           /**< Search keywords from .desktop file */
+    QString categories;         /**< Categories from .desktop file */
     bool selected = false;      /**< Selection state */
     bool terminal = false;      /**< Whether to run in terminal */
     QVector<int> matchPositions; /**< Indices of characters matched by fuzzy filter */
@@ -64,6 +66,9 @@ public:
     /** @brief Returns currently filtered items. */
     const std::vector<LauncherItem>& getDisplayedItems() const { return m_displayedItems; }
 
+    /** @brief Sets the active provider set name. */
+    void setSetName(const QString& name) { m_setName = name; }
+
 signals:
     void countChanged();
 
@@ -71,5 +76,6 @@ private:
     std::vector<LauncherItem> m_allItems;
     std::vector<LauncherItem> m_displayedItems;
     QString m_showMode = "drun";
+    QString m_setName = "default";
     bool m_fallbackEnabled = true;
 };

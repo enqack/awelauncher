@@ -17,9 +17,10 @@
 
 ## Features
 
-- **Fuzzy search** with visual match highlighting
+- **Fuzzy search**: Smart scoring with precision matching (Exact/Prefix/Fuzzy)
+- **Pins & Aliases**: Pin favorite apps or create custom aliases (e.g. `gc` -> `git commit`)
 - **Multiple modes**:
-  - Desktop apps (`drun`)
+  - Desktop apps (`drun`) - Supports Actions, Keywords, Categories ("Game", "Settings")
   - Command runner (`run`)
   - Window switcher (`window`) - Wayland window management
   - **Process Manager** (`top`, `kill`) - _New in 0.4.0_

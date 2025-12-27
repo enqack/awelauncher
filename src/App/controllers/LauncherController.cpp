@@ -322,6 +322,11 @@ void LauncherController::loadSet(const QString &setName, const QString &modeOver
     }
     emit modeChanged();
 
+    // Notify model of active set (for Pins/Aliases)
+    if (m_model) {
+        m_model->setSetName(activeSet.name);
+    }
+
     // Update prompt/icon
     m_prompt = activeSet.prompt.isEmpty() ? "Search..." : activeSet.prompt;
     emit promptChanged();
@@ -395,4 +400,17 @@ void LauncherController::loadSet(const QString &setName, const QString &modeOver
     }
 
     m_model->setItems(aggregatedItems);
+}
+
+#include <QWindow>
+void LauncherController::requestFocus()
+{
+    if (m_mainWindow) {
+        if (Config::instance().isDebug()) qDebug() << "LauncherController: Forcefully requesting focus via QWindow::requestActivate()";
+        // m_mainWindow->show(); // CRASH FIX: Don't call show() repeatedly, it may reset IME/Surface state
+        m_mainWindow->raise();
+        m_mainWindow->requestActivate();
+    } else {
+        qWarning() << "LauncherController: requestFocus called but no QWindow set!";
+    }
 }

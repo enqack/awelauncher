@@ -34,8 +34,13 @@ std::vector<LauncherItem> DesktopFileLoader::scan()
             
             desktopFile.beginGroup("Desktop Entry");
             
-            if (desktopFile.value("NoDisplay", false).toBool() || desktopFile.value("Hidden", false).toBool()) {
-                continue;
+            QString currentDesktop = qgetenv("XDG_CURRENT_DESKTOP");
+            QString onlyShowInStr = desktopFile.value("OnlyShowIn").toString();
+            if (!onlyShowInStr.isEmpty() && !currentDesktop.isEmpty()) {
+                QStringList onlyShowList = onlyShowInStr.split(';', Qt::SkipEmptyParts);
+                if (!onlyShowList.contains(currentDesktop, Qt::CaseInsensitive)) {
+                    continue;
+                }
             }
 
             // XDG: TryExec - if binary missing, ignore app
@@ -54,6 +59,9 @@ std::vector<LauncherItem> DesktopFileLoader::scan()
             QString exec = desktopFile.value("Exec").toString();
             QString icon = desktopFile.value("Icon").toString();
             QString comment = desktopFile.value("Comment").toString();
+            QString keywords = desktopFile.value("Keywords").toString().replace(';', ' ');
+            QString categories = desktopFile.value("Categories").toString().replace(';', ' ');
+            QString actionsStr = desktopFile.value("Actions").toString();
             QString type = desktopFile.value("Type").toString();
             bool terminal = desktopFile.value("Terminal", false).toBool();
 
@@ -62,8 +70,6 @@ std::vector<LauncherItem> DesktopFileLoader::scan()
             }
             
             // Clean up Exec (XDG codes)
-            // Remove %f, %F, %u, %U, %i, %c, %k
-            // Naive approach: remove " %<char>"
             exec.remove(QRegularExpression(" %[%a-zA-Z]"));
 
             items.push_back({
@@ -72,11 +78,42 @@ std::vector<LauncherItem> DesktopFileLoader::scan()
                 comment.isEmpty() ? exec : comment,
                 exec,
                 icon.isEmpty() ? "application-x-executable" : icon,
+                keywords,
+                categories,
                 false,
                 terminal
             });
             
-            desktopFile.endGroup();
+            desktopFile.endGroup(); // End "Desktop Entry"
+
+            // Parse Actions
+            if (!actionsStr.isEmpty()) {
+                QStringList actions = actionsStr.split(';', Qt::SkipEmptyParts);
+                for (const QString& action : actions) {
+                    desktopFile.beginGroup("Desktop Action " + action);
+                    
+                    QString actName = desktopFile.value("Name").toString();
+                    QString actExec = desktopFile.value("Exec").toString();
+                    QString actIcon = desktopFile.value("Icon").toString(); // Optional override check?
+                    
+                    if (!actName.isEmpty() && !actExec.isEmpty()) {
+                        actExec.remove(QRegularExpression(" %[%a-zA-Z]"));
+                        
+                        items.push_back({
+                            id + ":" + action,
+                            name + ": " + actName,
+                            "Action",
+                            actExec,
+                            actIcon.isEmpty() ? (icon.isEmpty() ? "application-x-executable" : icon) : actIcon,
+                            keywords, // Inherit keywords? Maybe.
+                            categories, // Inherit categories
+                            false,
+                            terminal // Inherit terminal setting? Usually actions specify. Assuming same for now.
+                        });
+                    }
+                    desktopFile.endGroup();
+                }
+            }
         }
     }
     

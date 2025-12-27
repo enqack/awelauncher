@@ -22,6 +22,8 @@ public:
         int score = 0;          /**< Total calculated score (higher is better) */
         QVector<int> positions; /**< Indices of the characters that matched */
         bool matched = false;   /**< True if the entire query was found in order */
+        bool isExact = false;   /**< True if exact case-insensitive match */
+        bool isPrefix = false;  /**< True if prefix match */
     };
 
     /** @brief Executes a fuzzy match of @p query against @p target. */

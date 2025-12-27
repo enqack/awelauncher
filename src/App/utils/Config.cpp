@@ -79,6 +79,32 @@ void Config::load(const QString& configPath)
         qWarning() << "Unknown error loading config file:" << configPath;
     }
     
+    // Load Global Pins & Aliases
+    if (m_config["general"].IsDefined()) {
+        YAML::Node general = m_config["general"];
+        
+        // Pins
+        if (general["pins"].IsDefined() && general["pins"].IsSequence()) {
+            m_globalPins.clear();
+            for (const auto& item : general["pins"]) {
+                m_globalPins.append(QString::fromStdString(item.as<std::string>()));
+            }
+        }
+        
+        // Aliases
+        if (general["aliases"].IsDefined() && general["aliases"].IsSequence()) {
+            m_globalAliases.clear();
+            for (const auto& item : general["aliases"]) {
+                if (item["name"].IsDefined() && item["target"].IsDefined()) {
+                    m_globalAliases.insert(
+                        QString::fromStdString(item["name"].as<std::string>()),
+                        QString::fromStdString(item["target"].as<std::string>())
+                    );
+                }
+            }
+        }
+    }
+
     // Load sets
     if (m_config["sets"].IsDefined() && m_config["sets"].IsMap()) {
         YAML::Node setsNode = m_config["sets"];
@@ -106,6 +132,25 @@ void Config::load(const QString& configPath)
                 }
             }
             
+            // pins
+            if (setNode["pins"].IsDefined() && setNode["pins"].IsSequence()) {
+                for (const auto& item : setNode["pins"]) {
+                    set.pins.append(QString::fromStdString(item.as<std::string>()));
+                }
+            }
+            
+            // aliases
+            if (setNode["aliases"].IsDefined() && setNode["aliases"].IsSequence()) {
+                for (const auto& item : setNode["aliases"]) {
+                     if (item["name"].IsDefined() && item["target"].IsDefined()) {
+                        set.aliases.insert(
+                            QString::fromStdString(item["name"].as<std::string>()),
+                            QString::fromStdString(item["target"].as<std::string>())
+                        );
+                    }
+                }
+            }
+            
             // layout overrides
             if (setNode["layout"].IsDefined()) {
                 YAML::Node l = setNode["layout"];
@@ -118,32 +163,11 @@ void Config::load(const QString& configPath)
             // filter
             if (setNode["filter"].IsDefined()) {
                 YAML::Node f = setNode["filter"];
-                
-                auto parseList = [](const YAML::Node& node, const char* key) -> QStringList {
-                    QStringList list;
-                    if (node[key].IsDefined()) {
-                         if (node[key].IsSequence()) {
-                            for (const auto& item : node[key]) {
-                                list.append(QString::fromStdString(item.as<std::string>()));
-                            }
-                        } else {
-                             list.append(QString::fromStdString(node[key].as<std::string>()));
-                        }
-                    }
-                    return list;
-                };
-
-                // For MVP, we treat "include" inside filter as a bag of strings
-                // The spec allows app_id/title keys, but we'll flatten them or support them specifically if needed.
-                // Re-reading spec: keys are `app_id: [...]`.
-                // Let's check keys.
-                
-                // Helper to extract values from map
+                // ... extract logic ...
                 auto extractMapValues = [&](const YAML::Node& node) -> QStringList {
                     QStringList res;
                     if (node.IsMap()) {
                         for (YAML::const_iterator it = node.begin(); it != node.end(); ++it) {
-                            // it->second should be a list or string
                             if (it->second.IsSequence()) {
                                 for (const auto& v : it->second) res.append(QString::fromStdString(v.as<std::string>()));
                             } else {

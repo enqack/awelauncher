@@ -35,6 +35,8 @@ public:
     Q_PROPERTY(QString icon READ icon NOTIFY iconChanged)
     /** @brief Current mode (drun, run, etc). */
     Q_PROPERTY(QString mode READ mode NOTIFY modeChanged)
+    /** @brief Whether to use explicit screen selection (true) or compositor placement (false). */
+    Q_PROPERTY(bool explicitScreen READ explicitScreen WRITE setExplicitScreen NOTIFY explicitScreenChanged)
 
     explicit LauncherController(QObject *parent = nullptr);
 
@@ -93,13 +95,25 @@ public:
     
     /** @brief Sets a callback to be invoked when the UI is first requested. */
     void setUiInitializer(std::function<void()> callback) { m_uiInitializer = callback; }
+    void setMainWindow(class QWindow* window) { m_mainWindow = window; }
+    
+    /** @brief Forcefully asks the OS for focus. */
+    Q_INVOKABLE void requestFocus();
     
     QString prompt() const { return m_selectionMode == Normal ? m_prompt : m_promptOverride; }
     QString icon() const { return m_icon; }
     QString mode() const { return m_mode; }
+    bool explicitScreen() const { return m_explicitScreen; }
+    void setExplicitScreen(bool explicitScreen) {
+        if (m_explicitScreen != explicitScreen) {
+            m_explicitScreen = explicitScreen;
+            emit explicitScreenChanged();
+        }
+    }
 
 signals:
     void windowVisibleChanged(bool visible);
+    void explicitScreenChanged();
     void promptChanged();
     void iconChanged();
     void modeChanged();
@@ -112,12 +126,14 @@ private:
    class WindowProvider* m_windowProvider = nullptr;
    bool m_dmenuMode = false;
    bool m_daemonMode = false;
-   bool m_visible = true;
+   bool m_visible = false;
+   bool m_explicitScreen = false;
    SelectionMode m_selectionMode = Normal;
    QString m_prompt = "Search...";
    QString m_icon = "search";
    QString m_mode = "drun";
    QString m_promptOverride = "";
    QString m_pendingHandle = "";
-   std::function<void()> m_uiInitializer = nullptr;
+    std::function<void()> m_uiInitializer = nullptr;
+    class QWindow* m_mainWindow = nullptr;
 };

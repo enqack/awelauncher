@@ -59,12 +59,17 @@ public:
         QStringList providers;
         FilterRule filter;
         LayoutConfig layout;
+        QStringList pins;
+        QMap<QString, QString> aliases;
     };
     
-    /** @brief Retrieves a defined ProviderSet by name. Returns empty if not found. */
+    /** @brief Retrieves a defined ProviderSet by name. Returns empty if found. */
     std::optional<ProviderSet> getSet(const QString& name) const;
     /** @brief Get the default set name (usually "default"). */
     QString getDefaultSetName() const { return "default"; }
+
+    QStringList getGlobalPins() const { return m_globalPins; }
+    QMap<QString, QString> getGlobalAliases() const { return m_globalAliases; }
 
 private:
     Config() = default;
@@ -73,5 +78,7 @@ private:
     QString m_lastPath;
     QMap<QString, QString> m_overrides;
     QMap<QString, ProviderSet> m_sets;
+    QStringList m_globalPins;
+    QMap<QString, QString> m_globalAliases;
     bool m_debug = false;
 };
