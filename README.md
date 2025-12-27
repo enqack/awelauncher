@@ -2,8 +2,8 @@
 
 <img src="assets/logo.png" width="128" alt="awelauncher logo">
 
-[![Version](https://img.shields.io/badge/version-0.4.4-blue.svg)](VERSION)
-[![License](https://img.shields.io/badge/license-BSD--3--Clause-green.svg)](LICENSE)
+[![Version](https://img.shields.io/badge/version-0.5.0-blue.svg)](VERSION)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Wayland-orange.svg)](https://wayland.freedesktop.org/)
 [![Qt](https://img.shields.io/badge/Qt-6-blue?logo=qt)](https://www.qt.io/)
 [![C++](https://img.shields.io/badge/C++-20-blue.svg)](https://isocpp.org/)

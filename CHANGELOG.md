@@ -2,6 +2,30 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.0] - 2025-12-26
+
+### Added
+
+- **Service Mode (Daemon)**:
+  - Added `--daemon` flag for instant startup time (~7ms).
+  - Implemented client/server architecture with UNIX socket IPC.
+  - Added "Lazy UI" loading for faster initial response.
+- **Monitor Placement**:
+  - Added `--output <name>` to launch on specific monitors.
+  - Added `--monitor <strategy>` (follow-mouse, follow-focus, name).
+  - Implemented robust "Late Focus" strategy for Wayland.
+- **Navigation**:
+  - Added support for `PageUp`, `PageDown`, `Home`, and `End` keys.
+- **Branding**:
+  - New "Flaming Hammer" logo and consistent icon handling.
+  - Added branding assets to repository.
+- **RFCs**: Added RFC-007 (Service Mode) to documentation.
+
+### Changed
+
+- **Focus**: Switched to "OnDemand" focus with late-timer backup for maximum Wayland stability.
+- **Architecture**: Separated `DaemonController` from `LauncherController` for cleaner separation of concerns.
+
 ## [0.4.4] - 2025-12-26
 
 ### Changed
