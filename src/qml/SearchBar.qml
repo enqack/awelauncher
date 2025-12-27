@@ -11,6 +11,10 @@ Rectangle {
     signal closeRequested()
     signal navigateDown()
     signal navigateUp()
+    signal navigatePageUp()
+    signal navigatePageDown()
+    signal navigateHome()
+    signal navigateEnd()
     signal activateCurrent(int flags)
     signal searchChanged(string text)
     
@@ -84,6 +88,18 @@ Rectangle {
                         event.accepted = true
                     } else if (event.key === Qt.Key_Up) {
                         navigateUp()
+                        event.accepted = true
+                    } else if (event.key === Qt.Key_PageUp) {
+                        navigatePageUp()
+                        event.accepted = true
+                    } else if (event.key === Qt.Key_PageDown) {
+                        navigatePageDown()
+                        event.accepted = true
+                    } else if (event.key === Qt.Key_Home) {
+                        navigateHome()
+                        event.accepted = true
+                    } else if (event.key === Qt.Key_End) {
+                        navigateEnd()
                         event.accepted = true
                     } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
                         var flags = 0

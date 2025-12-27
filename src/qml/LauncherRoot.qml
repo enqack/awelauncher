@@ -131,6 +131,33 @@ Window {
                     onCloseRequested: launcher.hide()
                     onNavigateDown: resultsList.currentIndex = Math.min(resultsList.count - 1, resultsList.currentIndex + 1)
                     onNavigateUp: resultsList.currentIndex = Math.max(0, resultsList.currentIndex - 1)
+                    
+                    onNavigatePageDown: {
+                        var itemHeight = AppTheme.rowHeight + resultsList.spacing
+                        var itemsPerPage = Math.floor(resultsList.height / itemHeight)
+                        var currentItemY = resultsList.currentIndex * itemHeight
+                        var relativeY = currentItemY - resultsList.contentY
+                        
+                        var nextIndex = Math.min(resultsList.count - 1, resultsList.currentIndex + itemsPerPage)
+                        resultsList.currentIndex = nextIndex
+                        
+                        // Sync Viewport
+                        resultsList.contentY = (nextIndex * itemHeight) - relativeY
+                    }
+                    onNavigatePageUp: {
+                        var itemHeight = AppTheme.rowHeight + resultsList.spacing
+                        var itemsPerPage = Math.floor(resultsList.height / itemHeight)
+                        var currentItemY = resultsList.currentIndex * itemHeight
+                        var relativeY = currentItemY - resultsList.contentY
+                        
+                        var nextIndex = Math.max(0, resultsList.currentIndex - itemsPerPage)
+                        resultsList.currentIndex = nextIndex
+                        
+                        // Sync Viewport
+                        resultsList.contentY = (nextIndex * itemHeight) - relativeY
+                    }
+                    onNavigateHome: resultsList.currentIndex = 0
+                    onNavigateEnd: resultsList.currentIndex = resultsList.count - 1
                     onActivateCurrent: (forceTerminal) => launcher.activate(resultsList.currentIndex, forceTerminal)
                     onSearchChanged: (text) => {
                          resultsList.currentIndex = 0
