@@ -10,6 +10,29 @@
 #include <QIcon>
 #include <QPixmap>
 #include <QDirIterator>
+#include <QPainterPath>
+
+static void applyRounding(QImage& img, float radiusRatio = 0.25) {
+    if (img.isNull()) return;
+    
+    QImage rounded(img.size(), QImage::Format_ARGB32);
+    rounded.fill(Qt::transparent);
+    
+    QPainter p(&rounded);
+    p.setRenderHint(QPainter::Antialiasing);
+    p.setRenderHint(QPainter::SmoothPixmapTransform);
+    
+    QBrush brush(img);
+    p.setBrush(brush);
+    p.setPen(Qt::NoPen);
+    
+    int rw = img.width() * radiusRatio;
+    int rh = img.height() * radiusRatio;
+    p.drawRoundedRect(img.rect(), rw, rh);
+    p.end();
+    
+    img = rounded;
+}
 
 class IconRunner : public QRunnable
 {
@@ -35,7 +58,8 @@ void IconResponse::run()
     QDir().mkpath(cacheDir);
     
     // Create cache key from id + size + timestamp (if file)
-    QString cacheKey = QString("%1_%2").arg(m_id).arg(size);
+    // v2: includes rounding fix
+    QString cacheKey = QString("v2_%1_%2").arg(m_id).arg(size);
     if (m_id.startsWith("/") && QFile::exists(m_id)) {
         cacheKey += QString::number(QFileInfo(m_id).lastModified().toMSecsSinceEpoch());
     }
@@ -55,28 +79,35 @@ void IconResponse::run()
     
     // 1. Try absolute path or resource
     if (m_id.startsWith("/")) {
-        if (!m_image.load(m_id)) {
-             // qWarning() << "Failed to load absolute icon path:" << m_id; // Removed debug log
+        if (m_image.load(m_id)) {
+             applyRounding(m_image);
         }
     } else if (m_id.startsWith("qrc:/")) {
         QString resPath = m_id.mid(3); // "qrc:/..." -> ":/..."
-        if (!m_image.load(resPath)) {
+        if (m_image.load(resPath)) {
+            applyRounding(m_image);
+        } else {
              // Try alternative without /qt/qrc/
              QString altPath = resPath;
              altPath.replace("/qt/qrc/", "/");
-             if (!m_image.load(altPath)) {
+             if (m_image.load(altPath)) {
+                 applyRounding(m_image);
+             } else {
                  // Final attempt: Search for the logo in resources
                  QDirIterator it(":", QDirIterator::Subdirectories);
                  while (it.hasNext()) {
                      QString found = it.next();
                      if (found.endsWith("/logo.png") && m_image.load(found)) {
+                         applyRounding(m_image);
                          break;
                      }
                  }
              }
         }
     } else if (m_id.startsWith(":/")) {
-        if (!m_image.load(m_id)) {
+        if (m_image.load(m_id)) {
+             applyRounding(m_image);
+        } else {
              qWarning() << "Failed to load resource icon:" << m_id;
         }
     }
@@ -88,6 +119,7 @@ void IconResponse::run()
             QPixmap pix = icon.pixmap(size, size);
             if (!pix.isNull()) {
                 m_image = pix.toImage();
+                applyRounding(m_image);
             }
         }
     }

@@ -48,8 +48,12 @@ _Focus: Structured extensibility._
   - Search/paste history.
 - [ ] **Calculator / Unit Conv**
   - Built-in utility provider.
-- [ ] **Input Modes**
-  - Emoji picker, File picker.
+- [x] Draft RFC-003: Monitor Destinations <!-- id: 73 -->
+    - [x] Research LayerShell output selection <!-- id: 74 -->
+    - [x] Write RFC-003 specification <!-- id: 75 -->
+    - [x] Update ROADMAP.md with placement feature <!-- id: 76 -->
+- [ ] **Emoji Picker / Input Modes**
+  - File picker, emoji selection.
 
 ## Tier 3: Ecosystem Platform
 

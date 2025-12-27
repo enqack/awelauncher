@@ -22,6 +22,8 @@ Item {
             asynchronous: true
             cache: true
             fillMode: Image.PreserveAspectFit
+            smooth: true
+            mipmap: true
         }
         
         ColumnLayout {
