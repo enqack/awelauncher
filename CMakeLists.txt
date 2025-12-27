@@ -28,6 +28,8 @@ add_executable(awelaunch
     src/main.cpp
     src/App/controllers/LauncherController.cpp
     src/App/controllers/LauncherController.h
+    src/App/controllers/DaemonController.cpp
+    src/App/controllers/DaemonController.h
     src/App/models/LauncherModel.cpp
     src/App/models/LauncherModel.h
     src/App/utils/Theme.cpp
@@ -36,6 +38,7 @@ add_executable(awelaunch
     src/App/utils/ThemeScanner.h
     src/App/utils/Config.cpp
     src/App/utils/Config.h
+    src/App/utils/Profiler.h
     src/App/providers/IconProvider.cpp
     src/App/providers/IconProvider.h
     src/App/providers/DesktopFileLoader.cpp

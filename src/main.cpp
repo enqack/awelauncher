@@ -29,6 +29,7 @@
 #include <QElapsedTimer>
 #include <QSurfaceFormat>
 #include "App/controllers/LauncherController.h"
+#include "App/controllers/DaemonController.h"
 #include "App/models/LauncherModel.h"
 #include "App/utils/Theme.h"
 #include "App/providers/IconProvider.h"
@@ -50,9 +51,7 @@
 #include "App/utils/FilterUtils.h"
 #include "App/utils/Constants.h"
 
-// Profiling helper
-#define PROFILE_POINT(name) \
-    if (debugMode) qDebug() << "[PROFILE]" << name << ":" << timer.elapsed() << "ms";
+#include "App/utils/Profiler.h"
 
 void personalMessageHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg)
 {
@@ -136,10 +135,16 @@ int main(int argc, char *argv[])
     QCommandLineOption overlayOption("overlay", "Force window to use Overlay layer (ignore status bars)");
     parser.addOption(overlayOption);
 
+    QCommandLineOption daemonOption("daemon", "Start in background daemon mode");
+    parser.addOption(daemonOption);
+
+    QCommandLineOption queryOption(QStringList() << "q" << "query", "Query the daemon for results and exit (JSON)", "text");
+    parser.addOption(queryOption);
+
     
     parser.process(app);
-    
-    // Start profiling timer
+
+    // Initial Debug / Profiling setup
     bool debugMode = parser.isSet(debugOption);
     Config::instance().setDebug(debugMode);
     qInstallMessageHandler(personalMessageHandler);
@@ -147,6 +152,59 @@ int main(int argc, char *argv[])
     if (debugMode) {
         qDebug() << "[Diagnostics] Platform Name:" << app.platformName();
         qDebug() << "[Diagnostics] QT_WAYLAND_SHELL_INTEGRATION:" << qgetenv("QT_WAYLAND_SHELL_INTEGRATION");
+    }
+
+    // --- Client / Daemon Logic ---
+    QString socketPath = DaemonController::socketPath();
+    bool daemonRunning = QFile::exists(socketPath);
+    bool startDaemon = parser.isSet(daemonOption);
+
+    if (daemonRunning && !startDaemon) {
+        // Mode: Client (External trigger or query)
+        QLocalSocket socket;
+        socket.connectToServer(socketPath);
+        if (socket.waitForConnected(500)) {
+            QJsonObject cmd;
+            cmd["version"] = 1;
+            
+            if (parser.isSet(queryOption)) {
+                cmd["action"] = "query";
+                QJsonObject payload;
+                payload["text"] = parser.value(queryOption);
+                cmd["payload"] = payload;
+            } else {
+                cmd["action"] = "show";
+                QJsonObject payload;
+                if (parser.isSet(setOption)) payload["set"] = parser.value(setOption);
+                if (parser.isSet(showOption)) payload["mode"] = parser.value(showOption);
+                if (parser.isSet(promptOption)) payload["prompt"] = parser.value(promptOption);
+                cmd["payload"] = payload;
+            }
+            
+            socket.write(QJsonDocument(cmd).toJson(QJsonDocument::Compact));
+            socket.flush();
+            
+            if (parser.isSet(queryOption)) {
+                if (socket.waitForReadyRead(1000)) {
+                    printf("%s\n", socket.readAll().constData());
+                    APP_PROFILE_POINT(timer, "Query response received");
+                } else {
+                    fprintf(stderr, "Error: Timeout waiting for daemon response\n");
+                }
+            } else {
+                APP_PROFILE_POINT(timer, "Daemon show command sent");
+            }
+            return 0;
+        } else {
+            // Socket exists but unresponsive - cleanup and proceed to standalone/daemon
+            QLocalServer::removeServer(socketPath);
+        }
+    }
+
+    if (startDaemon) {
+        // Mode: Daemon Start
+        // We'll initialize the full engine but hide the window by default
+        qDebug() << "Starting in daemon mode...";
     }
 
     if (parser.isSet(clearCacheOption)) {
@@ -158,7 +216,7 @@ int main(int argc, char *argv[])
         }
     }
     
-    PROFILE_POINT("App init");
+    APP_PROFILE_POINT(timer, "App init");
 
     // Load Config
     QString configPath = QStandardPaths::writableLocation(QStandardPaths::ConfigLocation) + "/awelauncher/config.yaml";
@@ -174,7 +232,7 @@ int main(int argc, char *argv[])
     if (parser.isSet(overlayOption)) overrides["window.layer"] = "overlay";
     Config::instance().setOverrides(overrides);
     
-    PROFILE_POINT("Config loaded");
+    APP_PROFILE_POINT(timer, "Config loaded");
 
     QQmlApplicationEngine engine;
 
@@ -183,9 +241,21 @@ int main(int argc, char *argv[])
     // Icon provider
     engine.addImageProvider("icon", new IconProvider());
 
-    // Core Controller
-    LauncherController controller;
-    engine.rootContext()->setContextProperty("Controller", &controller);
+    // Core Controller & Model (Heap allocated to ensure stable pointers)
+    auto *controller = new LauncherController(&app);
+    auto *model = new LauncherModel(&app);
+    
+    engine.rootContext()->setContextProperty("launcher", controller);
+    engine.rootContext()->setContextProperty("LauncherModel", model);
+    engine.rootContext()->setContextProperty("debugMode", debugMode);
+
+    // Daemon/IPC setup
+    auto *daemon = new DaemonController(controller, &app);
+    if (startDaemon) {
+        controller->setDaemonMode(true);
+        controller->setVisible(false); // Hide window in daemon mode
+    }
+    daemon->start();
 
     // Theme (Singleton-like)
     // We use a static instance for the singleton registration lambda
@@ -199,224 +269,56 @@ int main(int argc, char *argv[])
     if (themeName.isEmpty()) themeName = "default";
     theme.load(themeName);
     
-    PROFILE_POINT("Theme loaded");
+    APP_PROFILE_POINT(timer, "Theme loaded");
 
     qmlRegisterSingletonInstance("awelauncher", 1, 0, "AppTheme", &theme);
 
-    // Model
-    LauncherModel model;
-    engine.rootContext()->setContextProperty("LauncherModel", &model);
-    
-    // Expose CLI arguments to QML
-    QString showMode = parser.value(showOption);
-    QString promptText = parser.value(promptOption);
-    if (promptText.isEmpty()) promptText = "Search...";
-    
-    // Set show mode on model
-    model.setShowMode(showMode);
-    
-    engine.rootContext()->setContextProperty("cliShowMode", showMode);
-    engine.rootContext()->setContextProperty("cliPrompt", promptText);
-    engine.rootContext()->setContextProperty("debugMode", debugMode);
-    
     // Connect logic
-    controller.setModel(&model);
+    controller->setModel(model);
+
+    // Initialize WindowProvider if possible
+    WindowProvider* wp = new WindowProvider(&app);
+    if (wp->initialize()) {
+        controller->setWindowProvider(wp);
+    } else {
+        delete wp;
+    }
 
     // --- Provider Aggregation Logic ---
     
-    Config::ProviderSet activeSet;
-    bool usingSet = false;
+    // Determine which Set/Mode to use from CLI
+    QString setName = parser.value(setOption);
+    QString showMode = parser.value(showOption);
     
-    // 1. Determine which Set to use
-    if (parser.isSet(setOption)) {
-        QString setName = parser.value(setOption);
-        auto configSet = Config::instance().getSet(setName);
-        if (configSet) {
-            activeSet = *configSet;
-            usingSet = true;
-            qDebug() << "Loaded Provider Set:" << setName;
-        } else {
-            qWarning() << "Provider Set not found:" << setName << "- falling back to defaults";
-        }
-    } 
-    
-    // Fallback if no set loaded: Check for --show argument (legacy/ad-hoc mode)
-    if (!usingSet) {
-        QString mode = showMode.isEmpty() ? Constants::ProviderDrun : showMode;
-        
-        // Construct an ad-hoc set
-        activeSet.providers.append(mode);
-        activeSet.name = mode;
-        
-        // Special case: if dmenu flag is on, force dmenu provider
-        if (parser.isSet(dmenuOption)) {
-            activeSet.providers.clear();
-            activeSet.providers.append(Constants::ProviderDmenu);
-            activeSet.name = Constants::ProviderDmenu;
-        }
-        
-        // Defaults for ad-hoc modes
-        if (activeSet.providers.contains(Constants::ProviderTop)) {
-            activeSet.prompt = "Top > ";
-            activeSet.icon = "utilities-system-monitor";
-        } else if (activeSet.providers.contains(Constants::ProviderKill)) {
-            activeSet.prompt = "Kill > ";
-            activeSet.icon = "process-stop"; // or application-exit
-        } else if (activeSet.providers.contains(Constants::ProviderSSH)) {
-            activeSet.prompt = "SSH > ";
-            activeSet.icon = "network-server"; // or computer
-        }
-    }
-    
-    // Apply Active Set prompts/overrides
-    if (!activeSet.prompt.isEmpty()) {
-        engine.rootContext()->setContextProperty("cliPrompt", activeSet.prompt);
-    }
-    // 2. Resolve default icon (Logo fallback)
-    QString defaultIcon = "search";
-    QString appIconPath = QCoreApplication::applicationDirPath() + "/assets/logo.png";
-    if (QFile::exists(appIconPath)) {
-        defaultIcon = appIconPath;
+    // Special case: if dmenu flag is on, force dmenu provider (Standalone only)
+    if (parser.isSet(dmenuOption)) {
+        StdinProvider* stdinProvider = new StdinProvider(&app);
+        QObject::connect(stdinProvider, &StdinProvider::itemsChanged, model, [model, stdinProvider](){
+            auto items = stdinProvider->getItems();
+            std::vector<LauncherItem> stdItems(items.begin(), items.end());
+            model->setItems(stdItems);
+        });
+        stdinProvider->start();
+        controller->setDmenuMode(true);
     } else {
-        // Check current working directory (dev mode)
-        appIconPath = QDir::currentPath() + "/assets/logo.png";
-        if (QFile::exists(appIconPath)) {
-            defaultIcon = appIconPath;
-        } else {
-            // Check embedded resource (Nix / Installed mode)
-            QString resPath = ":/qt/qrc/awelauncher/assets/logo.png";
-            QString altPath = ":/awelauncher/assets/logo.png";
-            if (QFile::exists(resPath)) {
-                 defaultIcon = "qrc" + resPath; // "qrc:/qt/..."
-            } else if (QFile::exists(altPath)) {
-                 defaultIcon = "qrc" + altPath; // "qrc:/awelauncher/..."
-            } else {
-                // Final fallback to system icon if installed
-                defaultIcon = "awelaunch";
-            }
-        }
-    }
-
-    // Set Window Icon for taskbars / app switchers
-    app.setWindowIcon(QIcon::fromTheme(defaultIcon, QIcon(":/qt/qrc/awelauncher/assets/logo.png")));
-
-    engine.rootContext()->setContextProperty("cliIcon", activeSet.icon.isEmpty() ? defaultIcon : activeSet.icon);
-
-    // Apply layout overrides if present
-    if (usingSet) {
-        QMap<QString, QString> setOverrides;
-        if (activeSet.layout.width) setOverrides["window.width"] = QString::number(*activeSet.layout.width);
-        if (activeSet.layout.height) setOverrides["window.height"] = QString::number(*activeSet.layout.height);
-        if (!activeSet.layout.anchor.isEmpty()) setOverrides["window.anchor"] = activeSet.layout.anchor;
-        if (activeSet.layout.margin) setOverrides["window.margin"] = QString::number(*activeSet.layout.margin);
-        if (!setOverrides.isEmpty()) {
-            Config::instance().setOverrides(setOverrides);
-        }
-    }
-
-    // 2. Instantiate Providers
-    std::vector<LauncherItem> aggregatedItems;
-    
-    for (const QString& providerName : activeSet.providers) {
-        if (providerName == Constants::ProviderRun) {
-            auto items = PathProvider::scan();
-            aggregatedItems.insert(aggregatedItems.end(), items.begin(), items.end());
-        } 
-        else if (providerName == Constants::ProviderDrun) {
-            auto items = DesktopProvider::scan();
-            aggregatedItems.insert(aggregatedItems.end(), items.begin(), items.end());
-        }
-        else if (providerName == Constants::ProviderTop) {
-            int limit = Config::instance().getInt("top.limit", 10);
-            QString sortStr = Config::instance().getString("top.sort", "cpu");
-            ProcessProvider::SortMode sort = (sortStr == "memory") ? ProcessProvider::MEMORY : ProcessProvider::CPU;
-            
-            auto items = ProcessProvider::scan(true, limit, sort, false);
-            aggregatedItems.insert(aggregatedItems.end(), items.begin(), items.end());
-        }
-        else if (providerName == Constants::ProviderKill) {
-            bool showSystem = Config::instance().getString("kill.show_system", "false") == "true";
-            // For kill mode, we list ALL (limit -1), sorted by name? Or Memory? Default to Memory for now strictly to be useful.
-            auto items = ProcessProvider::scan(false, -1, ProcessProvider::MEMORY, showSystem);
-            aggregatedItems.insert(aggregatedItems.end(), items.begin(), items.end());
-        }
-        else if (providerName == Constants::ProviderSSH) {
-            QString termCmd = Config::instance().getString("ssh.terminal", "");
-            bool parseKnown = Config::instance().getString("ssh.parse_known_hosts", "true") == "true";
-            auto items = SSHProvider::scan(termCmd, parseKnown);
-            aggregatedItems.insert(aggregatedItems.end(), items.begin(), items.end());
-        }
-        else if (providerName == Constants::ProviderWindow) {
-            static WindowProvider* wp = nullptr; 
-            if (!wp) {
-                wp = new WindowProvider(&app);
-                if (wp->initialize()) {
-                    controller.setWindowProvider(wp);
-                    auto windows = wp->getWindows();
-                    std::vector<LauncherItem> wItems(windows.begin(), windows.end());
-                    aggregatedItems.insert(aggregatedItems.end(), wItems.begin(), wItems.end());
-                } else {
-                    delete wp; wp = nullptr;
-                }
-            }
-        }
-        else if (providerName == Constants::ProviderDmenu) {
-            StdinProvider* stdinProvider = new StdinProvider(&app);
-            QObject::connect(stdinProvider, &StdinProvider::itemsChanged, &model, [&model, stdinProvider](){
-                auto items = stdinProvider->getItems();
-                std::vector<LauncherItem> stdItems(items.begin(), items.end());
-                model.setItems(stdItems);
-            });
-            stdinProvider->start();
-            controller.setDmenuMode(true);
-        }
-    }
-    
-    // 3. Apply Filters
-    if (!activeSet.filter.include.isEmpty() || !activeSet.filter.exclude.isEmpty()) {
-         std::vector<LauncherItem> filtered;
-         for (const auto& item : aggregatedItems) {
-             bool keep = true;
-             
-             // Check Exclude (High priority)
-             if (!activeSet.filter.exclude.isEmpty()) {
-                 if (FilterUtils::matches(item.primary, activeSet.filter.exclude) || FilterUtils::matches(item.id, activeSet.filter.exclude)) {
-                     keep = false;
-                 }
-             }
-             
-             // Check Include (if survived exclude)
-             if (keep && !activeSet.filter.include.isEmpty()) {
-                 bool included = false;
-                 if (FilterUtils::matches(item.primary, activeSet.filter.include) || FilterUtils::matches(item.id, activeSet.filter.include)) {
-                     included = true;
-                 }
-                 if (!included) keep = false;
-             }
-             
-             if (keep) filtered.push_back(item);
-         }
-         aggregatedItems = filtered;
-    }
-    
-    // Set Items on Model
-    if (!parser.isSet(dmenuOption)) {
-         model.setItems(aggregatedItems);
+        // Load initial set
+        controller->loadSet(setName, showMode);
     }
     
     // Configure fallback
-    Config::instance().validateKeys(); // Ensure all keys valid
-    // For now, assuming standard fallback behavior is desired unless disabled
-    // If we parsed `general.fallbacks.run_command` from config, we'd use it here.
-    // Let's check config string manually for now since we don't have a typed getter for specific deep keys yet
-    // Actually, we do have recursion logic.
-    // But `Config` logic is: "general.fallbacks.run_command" -> key split...
-    // Let's assume defaults for now or parse deeply if time permits.
-    // Since `getString` splits by dot, we can try: 
+    Config::instance().validateKeys();
     QString fallbackStr = Config::instance().getString("general.fallbacks.run_command", "true");
-    model.setFallbackEnabled(fallbackStr == "true");
+    model->setFallbackEnabled(fallbackStr == "true");
 
-    PROFILE_POINT("Items aggregated");
+    // Set Window Icon
+    QString iconStr = controller->icon();
+    if (iconStr.startsWith("qrc:/") || iconStr.startsWith(":/") || iconStr.startsWith("/")) {
+        app.setWindowIcon(QIcon(iconStr));
+    } else {
+        app.setWindowIcon(QIcon::fromTheme(iconStr));
+    }
+
+    APP_PROFILE_POINT(timer, "Items aggregated");
 
     const QUrl url(QStringLiteral(u"qrc:/awelauncher/src/qml/LauncherRoot.qml"));
     QObject::connect(&engine, &QQmlApplicationEngine::objectCreated,
@@ -425,9 +327,22 @@ int main(int argc, char *argv[])
             QCoreApplication::exit(-1);
     }, Qt::QueuedConnection);
 
-    engine.load(url);
-    
-    PROFILE_POINT("QML loaded");
+    // Lazy Load UI if in daemon mode
+    if (startDaemon) {
+        controller->setUiInitializer([&engine, url]() {
+             engine.load(url);
+             // We can capture timer from main scope if needed, but it might be tricky with QElapsedTimer copy.
+             // Just log directly or use APP_PROFILE_POINT if we re-instantiate timer?
+             // Actually timer is in main stack, capturing by ref is safe as main blocks.
+             // But APP_PROFILE_POINT uses 'timer' name.
+             // Let's just log.
+             qDebug() << "[PROFILE] QML loaded (Lazy) : " << QDateTime::currentMSecsSinceEpoch(); 
+        });
+        APP_PROFILE_POINT(timer, "Daemon Ready (UI Deferred)");
+    } else {
+        engine.load(url);
+        APP_PROFILE_POINT(timer, "QML loaded");
+    }
 
     return app.exec();
 }

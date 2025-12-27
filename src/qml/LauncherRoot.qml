@@ -6,7 +6,7 @@ import org.kde.layershell as KWayland
 
 Window {
     id: root
-    visible: true
+    visible: launcher.isVisible
     
     // LayerShell properties
     KWayland.Window.layer: AppTheme.windowLayer === 2 ? KWayland.Window.LayerOverlay : KWayland.Window.LayerTop
@@ -70,7 +70,16 @@ Window {
     
     onActiveChanged: {
         if (!active) {
-            Qt.quit()
+            launcher.hide()
+        }
+    }
+    
+    // Manage focus and state when visibility changes
+    onVisibleChanged: {
+        if (visible) {
+            root.requestActivate()
+            searchBar.forceInputFocus()
+            focusTimer.start()
         }
     }
 
@@ -117,11 +126,12 @@ Window {
                 // Header / Search
                 SearchBar {
                     id: searchBar
+                    prompt: launcher.prompt
                     
-                    onCloseRequested: root.close()
+                    onCloseRequested: launcher.hide()
                     onNavigateDown: resultsList.currentIndex = Math.min(resultsList.count - 1, resultsList.currentIndex + 1)
                     onNavigateUp: resultsList.currentIndex = Math.max(0, resultsList.currentIndex - 1)
-                    onActivateCurrent: (forceTerminal) => Controller.activate(resultsList.currentIndex, forceTerminal)
+                    onActivateCurrent: (forceTerminal) => launcher.activate(resultsList.currentIndex, forceTerminal)
                     onSearchChanged: (text) => {
                          resultsList.currentIndex = 0
                     }
@@ -160,7 +170,7 @@ Window {
                         
                         Image {
                             Layout.alignment: Qt.AlignHCenter
-                            source: "image://icon/" + cliIcon
+                            source: "image://icon/" + launcher.icon
                             sourceSize.width: 96
                             sourceSize.height: 96
                             opacity: 0.3
@@ -179,7 +189,7 @@ Window {
                 // Footer
                 Footer {
                    resultCount: resultsList.count
-                   showMode: cliShowMode
+                   showMode: launcher.mode
                 }
             }
         }
@@ -190,14 +200,14 @@ Window {
         z: -1
         onClicked: {
             if (showHelp) showHelp = false;
-            else Qt.quit();
+            else launcher.hide();
         }
     }
     
     // Help overlay
     HelpOverlay {
         visible: showHelp
-        showMode: cliShowMode
+        showMode: launcher.mode
         onCloseRequested: showHelp = false
     }
 
@@ -210,7 +220,7 @@ Window {
             if (showHelp) {
                 showHelp = false
             } else {
-                Qt.quit()
+                launcher.hide()
             }
         }
     }
@@ -222,33 +232,33 @@ Window {
     
     // Window mode actions
     Shortcut {
-        enabled: cliShowMode === "window"
+        enabled: launcher.mode === "window"
         sequence: "Ctrl+D"
-        onActivated: Controller.closeWindow(resultsList.currentIndex)
+        onActivated: launcher.closeWindow(resultsList.currentIndex)
     }
     
     Shortcut {
-        enabled: cliShowMode === "window"
+        enabled: launcher.mode === "window"
         sequence: "Ctrl+F"
-        onActivated: Controller.toggleFullscreen(resultsList.currentIndex)
+        onActivated: launcher.toggleFullscreen(resultsList.currentIndex)
     }
     
     Shortcut {
-        enabled: cliShowMode === "window"
+        enabled: launcher.mode === "window"
         sequence: "Ctrl+X"
-        onActivated: Controller.toggleMaximize(resultsList.currentIndex)
+        onActivated: launcher.toggleMaximize(resultsList.currentIndex)
     }
     
     Shortcut {
-        enabled: cliShowMode === "window"
+        enabled: launcher.mode === "window"
         sequence: "Ctrl+N"
-        onActivated: Controller.toggleMinimize(resultsList.currentIndex)
+        onActivated: launcher.toggleMinimize(resultsList.currentIndex)
     }
     
     Shortcut {
-        enabled: cliShowMode === "window"
+        enabled: launcher.mode === "window"
         sequence: "Ctrl+M"
-        onActivated: Controller.beginMoveToMonitor(resultsList.currentIndex)
+        onActivated: launcher.beginMoveToMonitor(resultsList.currentIndex)
     }
     
 }

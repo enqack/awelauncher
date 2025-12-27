@@ -20,16 +20,16 @@ _Focus: Sharpening the tool without changing its identity._
     provider lists/ordering.
   - _Goal:_ Eliminate config-switching friction.
   - _Status:_ Shipped in v0.4.0.
-- [ ] **Pinned Results & Aliases**
+- [ ] **Pinned Results & Aliases** ([RFC-004](file:///home/sysop/Projects/awelauncher/docs/rfcs/004-pinned-results-aliases.md))
   - Allow explicit pinning of items to the top of results.
   - _Goal:_ Muscle memory for frequent actions.
-- [ ] **Smarter Scoring**
+- [ ] **Smarter Scoring** ([RFC-005](file:///home/sysop/Projects/awelauncher/docs/rfcs/005-smarter-scoring.md))
   - Hybrid fuzzy: Prefix > Subsequence > Acronym.
   - _Goal:_ More intuitive ranking.
-- [ ] **Enhanced .desktop Handling**
+- [ ] **Enhanced .desktop Handling** ([RFC-006](file:///home/sysop/Projects/awelauncher/docs/rfcs/006-xdg-desktop-enhancements.md))
   - Respect `Hidden`/`NoDisplay`, parse keywords/categories, support Actions.
   - _Goal:_ Full XDG compliance and cleaner results.
-- [ ] **Unified History**
+- [ ] **Unified History** ([RFC-005](file:///home/sysop/Projects/awelauncher/docs/rfcs/005-smarter-scoring.md))
   - Extend MRU to `run` and `dmenu` modes.
   - _Goal:_ Consistent recall across modes.
 
@@ -37,16 +37,20 @@ _Focus: Sharpening the tool without changing its identity._
 
 _Focus: Structured extensibility._
 
-- [ ] **Service Mode (Daemon) + Socket Control**
+- [x] **Service Mode (Daemon) + Socket Control** ([RFC-007](file:///home/sysop/Projects/awelauncher/docs/rfcs/007-service-mode.md))
   - Keep instance resident for < 10ms response.
-  - Allow external control (e.g., `awelaunchctl`).
-- [ ] **Provider/Context Actions**
+  - Allow external control.
+  - _Status:_ Shipped core in v0.4.4.
+- [ ] **awelaunchctl - Dedicated Client** ([RFC-011](file:///home/sysop/Projects/awelauncher/docs/rfcs/011-awelaunchctl.md))
+  - A handy wrapper for sending JSON commands to the daemon without manual JSON/socat.
+  - _Goal:_ First-class scripting and automation.
+- [ ] **Provider/Context Actions** ([RFC-008](file:///home/sysop/Projects/awelauncher/docs/rfcs/008-context-actions.md))
   - Right-click/Keybind actions for items (e.g., "Open in Terminal", "Move
     Window").
   - _Goal:_ Transform from "picker" to "workflow tool".
-- [ ] **Clipboard Provider**
+- [ ] **Clipboard Provider** ([RFC-009](file:///home/sysop/Projects/awelauncher/docs/rfcs/009-clipboard-provider.md))
   - Search/paste history.
-- [ ] **Calculator / Unit Conv**
+- [ ] **Calculator / Unit Conv** ([RFC-010](file:///home/sysop/Projects/awelauncher/docs/rfcs/010-calculator-provider.md))
   - Built-in utility provider.
 - [x] Draft RFC-003: Monitor Destinations <!-- id: 73 -->
     - [x] Research LayerShell output selection <!-- id: 74 -->
@@ -68,8 +72,19 @@ _Focus: Long-term stability protocol._
 
 ---
 
+## The Road to 1.0.0: "The Complete Systems Launcher"
+
+v1.0.0 represents the transition from a "fast picker" to a "stable system component." Key themes:
+
+1.  **Semantic Stability**: The IPC protocol and plugin API are declared stable.
+2.  **`awelaunchctl`**: The definitive way to interact with the launcher from scripts, WM configs, and keybinds.
+3.  **Refined Discovery**: Fully compliant XDG handling, smarter scoring, and context-aware actions.
+4.  **Operational Safety**: Robust error handling, memory bloat guards, and systemd integration.
+
+---
+
 ## Prioritized Next Steps (MVP)
 
-1. **Provider Sets**: The highest leverage for "pro" feel.
-2. **Service Mode**: The ultimate performance feature.
-3. **Context Actions**: The biggest workflow enhancer.
+1. **Context Actions**: The biggest workflow enhancer.
+2. **awelaunchctl**: Stabilizing the control plane.
+3. **Smarter Scoring**: Finishing Tier 1 quality.

@@ -60,6 +60,9 @@ public:
     
     /** @brief Enable/Disable fallback "Run..." item */
     void setFallbackEnabled(bool enabled) { m_fallbackEnabled = enabled; }
+    
+    /** @brief Returns currently filtered items. */
+    const std::vector<LauncherItem>& getDisplayedItems() const { return m_displayedItems; }
 
 signals:
     void countChanged();

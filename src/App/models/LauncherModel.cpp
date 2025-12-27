@@ -62,8 +62,13 @@ void LauncherModel::setItems(const std::vector<LauncherItem>& items)
     qDebug() << "LauncherModel::setItems finished. Display count:" << m_displayedItems.size();
 }
 
+#include "../utils/Profiler.h"
+
 void LauncherModel::filter(const QString& query)
 {
+    QElapsedTimer timer;
+    timer.start();
+    
     qDebug() << "LauncherModel::filter called with:" << query << "Total Items:" << m_allItems.size();
     beginResetModel();
     if (query.isEmpty()) {
@@ -141,5 +146,7 @@ void LauncherModel::filter(const QString& query)
     }
     endResetModel();
     emit countChanged();
+    
+    APP_PROFILE_POINT(timer, "Filter completed");
 }
 

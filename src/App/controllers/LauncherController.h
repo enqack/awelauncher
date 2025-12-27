@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QObject>
+#include <functional>
 
 /**
  * @class LauncherController
@@ -26,6 +27,14 @@ public:
     Q_PROPERTY(SelectionMode selectionMode READ selectionMode NOTIFY selectionModeChanged)
     /** @brief Optional text to display in the prompt when selection mode changes. */
     Q_PROPERTY(QString promptOverride READ promptOverride NOTIFY promptOverrideChanged)
+    /** @brief Visibility state of the launcher. */
+    Q_PROPERTY(bool isVisible READ isVisible WRITE setVisible NOTIFY windowVisibleChanged)
+    /** @brief Current prompt text. */
+    Q_PROPERTY(QString prompt READ prompt NOTIFY promptChanged)
+    /** @brief Current icon key. */
+    Q_PROPERTY(QString icon READ icon NOTIFY iconChanged)
+    /** @brief Current mode (drun, run, etc). */
+    Q_PROPERTY(QString mode READ mode NOTIFY modeChanged)
 
     explicit LauncherController(QObject *parent = nullptr);
 
@@ -54,8 +63,19 @@ public:
     Q_INVOKABLE void toggleMinimize(int index);
     /** @brief Initiates the monitor selection flow for the window at index. */
     Q_INVOKABLE void beginMoveToMonitor(int index);
+    
+    /** @brief Hides the launcher. Quits if not in daemon mode. */
+    Q_INVOKABLE void hide();
+    /** @brief Toggles the launcher visibility. */
+    Q_INVOKABLE void toggle();
+    /** @brief Explicitly quits the application. */
+    Q_INVOKABLE void quit();
+    
+    /** @brief Loads a specific provider set. */
+    Q_INVOKABLE void loadSet(const QString &setName, const QString &mode = "");
 
     void setModel(class LauncherModel* model);
+    class LauncherModel* model() const { return m_model; }
     void setWindowProvider(class WindowProvider* provider);
     
     /** @brief Returns names of all detected monitors. */
@@ -64,12 +84,25 @@ public:
     Q_INVOKABLE void moveWindowToOutput(int index, const QString& outputName);
 
     void setDmenuMode(bool enabled);
+    void setDaemonMode(bool enabled);
 
     SelectionMode selectionMode() const { return m_selectionMode; }
     QString promptOverride() const { return m_promptOverride; }
+    bool isVisible() const { return m_visible; }
+    void setVisible(bool visible);
+    
+    /** @brief Sets a callback to be invoked when the UI is first requested. */
+    void setUiInitializer(std::function<void()> callback) { m_uiInitializer = callback; }
+    
+    QString prompt() const { return m_selectionMode == Normal ? m_prompt : m_promptOverride; }
+    QString icon() const { return m_icon; }
+    QString mode() const { return m_mode; }
 
 signals:
     void windowVisibleChanged(bool visible);
+    void promptChanged();
+    void iconChanged();
+    void modeChanged();
     void selectionModeChanged();
     void promptOverrideChanged();
     void clearSearch();
@@ -78,7 +111,13 @@ private:
    class LauncherModel* m_model = nullptr;
    class WindowProvider* m_windowProvider = nullptr;
    bool m_dmenuMode = false;
+   bool m_daemonMode = false;
+   bool m_visible = true;
    SelectionMode m_selectionMode = Normal;
+   QString m_prompt = "Search...";
+   QString m_icon = "search";
+   QString m_mode = "drun";
    QString m_promptOverride = "";
    QString m_pendingHandle = "";
+   std::function<void()> m_uiInitializer = nullptr;
 };

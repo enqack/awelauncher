@@ -5,6 +5,15 @@
 #include <signal.h>
 #include "../utils/TerminalUtils.h"
 #include "../utils/Constants.h"
+#include "../utils/Config.h"
+#include "../utils/FilterUtils.h"
+#include "../providers/PathProvider.h"
+#include "../providers/DesktopProvider.h"
+#include "../providers/ProcessProvider.h"
+#include "../providers/SSHProvider.h"
+#include "../providers/StdinProvider.h"
+#include <QFile>
+#include <QDir>
 
 LauncherController::LauncherController(QObject *parent)
     : QObject(parent)
@@ -31,6 +40,11 @@ void LauncherController::setDmenuMode(bool enabled)
     m_dmenuMode = enabled;
 }
 
+void LauncherController::setDaemonMode(bool enabled)
+{
+    m_daemonMode = enabled;
+}
+
 
 void LauncherController::filter(const QString &text)
 {
@@ -55,7 +69,7 @@ void LauncherController::activate(int index, int flags)
     if (m_dmenuMode) {
         printf("%s\n", primary.toStdString().c_str());
         fflush(stdout);
-        QCoreApplication::quit();
+        quit();
         return;
     }
 
@@ -64,14 +78,14 @@ void LauncherController::activate(int index, int flags)
     if (m_windowProvider && exec.isEmpty()) {
         if (m_selectionMode == Normal) {
             m_windowProvider->activateWindow(itemId);
-            QCoreApplication::quit();
+            hide();
             return;
         } else if (m_selectionMode == MonitorSelect) {
             if (!m_pendingHandle.isEmpty()) {
                 m_windowProvider->moveToOutput(m_pendingHandle, primary);
                 qDebug() << "Moved window" << m_pendingHandle << "to" << primary;
             }
-            QCoreApplication::quit();
+            hide();
             return;
         }
     }
@@ -88,7 +102,7 @@ void LauncherController::activate(int index, int flags)
             // Signal 15 is SIGTERM
             ::kill(pid, 15);
             qDebug() << "Sent SIGTERM to process:" << pid;
-            QCoreApplication::quit();
+            hide();
             return;
         }
     }
@@ -120,7 +134,7 @@ void LauncherController::activate(int index, int flags)
         
         qDebug() << "Launching:" << program << args;
         QProcess::startDetached(program, args);
-        QCoreApplication::quit();
+        hide();
     }
 }
 
@@ -230,4 +244,155 @@ void LauncherController::beginMoveToMonitor(int index)
         monitorItems.push_back(item);
     }
     m_model->setItems(monitorItems);
+}
+
+void LauncherController::setVisible(bool visible)
+{
+    if (m_visible == visible) return;
+    
+    // Lazy UI initialization
+    if (visible && m_uiInitializer) {
+        m_uiInitializer();
+        m_uiInitializer = nullptr;
+    }
+
+    m_visible = visible;
+    emit windowVisibleChanged(m_visible);
+    
+    // Clear search when hiding
+    if (!visible) {
+        emit clearSearch();
+    }
+}
+
+void LauncherController::hide()
+{
+    if (m_daemonMode) {
+        setVisible(false);
+    } else {
+        quit();
+    }
+}
+
+void LauncherController::toggle()
+{
+    setVisible(!m_visible);
+}
+
+void LauncherController::quit()
+{
+    QCoreApplication::quit();
+}
+
+void LauncherController::loadSet(const QString &setName, const QString &modeOverride)
+{
+    if (!m_model) return;
+
+    Config::ProviderSet activeSet;
+    bool usingSet = false;
+
+    if (!setName.isEmpty()) {
+        auto configSet = Config::instance().getSet(setName);
+        if (configSet) {
+            activeSet = *configSet;
+            usingSet = true;
+            m_mode = setName;
+            qDebug() << "LauncherController: Loading Provider Set:" << setName;
+        } else {
+            qWarning() << "LauncherController: Provider Set not found:" << setName;
+        }
+    }
+
+    if (!usingSet) {
+        QString mode = modeOverride.isEmpty() ? Constants::ProviderDrun : modeOverride;
+        activeSet.providers.append(mode);
+        activeSet.name = mode;
+        m_mode = mode;
+
+        if (activeSet.providers.contains(Constants::ProviderTop)) {
+            activeSet.prompt = "Top > ";
+            activeSet.icon = "utilities-system-monitor";
+        } else if (activeSet.providers.contains(Constants::ProviderKill)) {
+            activeSet.prompt = "Kill > ";
+            activeSet.icon = "process-stop";
+        } else if (activeSet.providers.contains(Constants::ProviderSSH)) {
+            activeSet.prompt = "SSH > ";
+            activeSet.icon = "network-server";
+        }
+    }
+    emit modeChanged();
+
+    // Update prompt/icon
+    m_prompt = activeSet.prompt.isEmpty() ? "Search..." : activeSet.prompt;
+    emit promptChanged();
+
+    if (!activeSet.icon.isEmpty()) {
+        m_icon = activeSet.icon;
+    } else {
+        m_icon = "qrc:/awelauncher/assets/logo.png";
+    }
+    emit iconChanged();
+
+    // Apply layout overrides
+    if (usingSet) {
+        QMap<QString, QString> setOverrides;
+        if (activeSet.layout.width) setOverrides["window.width"] = QString::number(*activeSet.layout.width);
+        if (activeSet.layout.height) setOverrides["window.height"] = QString::number(*activeSet.layout.height);
+        if (!activeSet.layout.anchor.isEmpty()) setOverrides["window.anchor"] = activeSet.layout.anchor;
+        if (activeSet.layout.margin) setOverrides["window.margin"] = QString::number(*activeSet.layout.margin);
+        Config::instance().setOverrides(setOverrides);
+    }
+
+    // Aggregation
+    std::vector<LauncherItem> aggregatedItems;
+    for (const QString& providerName : activeSet.providers) {
+        if (providerName == Constants::ProviderRun) {
+            auto items = PathProvider::scan();
+            aggregatedItems.insert(aggregatedItems.end(), items.begin(), items.end());
+        } else if (providerName == Constants::ProviderDrun) {
+            auto items = DesktopProvider::scan();
+            aggregatedItems.insert(aggregatedItems.end(), items.begin(), items.end());
+        } else if (providerName == Constants::ProviderTop) {
+            int limit = Config::instance().getInt("top.limit", 10);
+            QString sortStr = Config::instance().getString("top.sort", "cpu");
+            ProcessProvider::SortMode sort = (sortStr == "memory") ? ProcessProvider::MEMORY : ProcessProvider::CPU;
+            auto items = ProcessProvider::scan(true, limit, sort, false);
+            aggregatedItems.insert(aggregatedItems.end(), items.begin(), items.end());
+        } else if (providerName == Constants::ProviderKill) {
+            bool showSystem = Config::instance().getString("kill.show_system", "false") == "true";
+            auto items = ProcessProvider::scan(false, -1, ProcessProvider::MEMORY, showSystem);
+            aggregatedItems.insert(aggregatedItems.end(), items.begin(), items.end());
+        } else if (providerName == Constants::ProviderSSH) {
+            QString termCmd = Config::instance().getString("ssh.terminal", "");
+            bool parseKnown = Config::instance().getString("ssh.parse_known_hosts", "true") == "true";
+            auto items = SSHProvider::scan(termCmd, parseKnown);
+            aggregatedItems.insert(aggregatedItems.end(), items.begin(), items.end());
+        } else if (providerName == Constants::ProviderWindow) {
+            if (m_windowProvider) {
+                auto windows = m_windowProvider->getWindows();
+                std::vector<LauncherItem> wItems(windows.begin(), windows.end());
+                aggregatedItems.insert(aggregatedItems.end(), wItems.begin(), wItems.end());
+            }
+        }
+    }
+
+    // Filtering
+    if (!activeSet.filter.include.isEmpty() || !activeSet.filter.exclude.isEmpty()) {
+        std::vector<LauncherItem> filtered;
+        for (const auto& item : aggregatedItems) {
+            bool keep = true;
+            if (!activeSet.filter.exclude.isEmpty()) {
+                if (FilterUtils::matches(item.primary, activeSet.filter.exclude) || FilterUtils::matches(item.id, activeSet.filter.exclude)) keep = false;
+            }
+            if (keep && !activeSet.filter.include.isEmpty()) {
+                bool included = false;
+                if (FilterUtils::matches(item.primary, activeSet.filter.include) || FilterUtils::matches(item.id, activeSet.filter.include)) included = true;
+                if (!included) keep = false;
+            }
+            if (keep) filtered.push_back(item);
+        }
+        aggregatedItems = filtered;
+    }
+
+    m_model->setItems(aggregatedItems);
 }

@@ -17,6 +17,9 @@ Rectangle {
     property alias text: searchInput.text
     property alias inputFocus: searchInput.focus
     
+    property string prompt: "Search..."
+    property string icon: launcher.icon
+    
     function forceInputFocus() {
         searchInput.forceActiveFocus()
     }
@@ -28,7 +31,7 @@ Rectangle {
         // Context Icon
         Image {
             id: contextIcon
-            source: "image://icon/" + (cliIcon !== "" ? cliIcon : "search")
+            source: "image://icon/" + icon
             
             // Layout control
             Layout.fillHeight: true
@@ -53,7 +56,7 @@ Rectangle {
             Text {
                 anchors.fill: parent
                 verticalAlignment: Text.AlignVCenter
-                text: (Controller && Controller.promptOverride && Controller.promptOverride !== "") ? Controller.promptOverride : cliPrompt
+                text: prompt
                 color: AppTheme.muted
                 font.pixelSize: AppTheme.fontSize
                 visible: searchInput.text === ""
@@ -69,7 +72,7 @@ Rectangle {
                 selectByMouse: true
                 
                 onTextChanged: {
-                    Controller.filter(text)
+                    launcher.filter(text)
                     searchChanged(text)
                 }
                 
@@ -93,7 +96,7 @@ Rectangle {
                 }
                 
                 Connections {
-                    target: Controller
+                    target: launcher
                     function onClearSearch() {
                         searchInput.text = ""
                     }

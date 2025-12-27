@@ -72,7 +72,7 @@ Item {
         anchors.fill: parent
         onClicked: {
             ListView.view.currentIndex = index
-            Controller.activate(index)
+            launcher.activate(index)
         }
     }
 }
