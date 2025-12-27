@@ -1,4 +1,9 @@
-# Spec: Provider Sets Configuration
+# RFC-012: Provider Sets Configuration
+
+## Status
+- **Date**: 2025-12-26
+- **Status**: Draft
+- **Target Version**: v1.0.0
 
 ## Goal
 

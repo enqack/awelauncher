@@ -1,4 +1,9 @@
-# Spec: Systems Utility Providers
+# RFC-013: Systems Utility Providers
+
+## Status
+- **Date**: 2025-12-26
+- **Status**: Draft
+- **Target Version**: v1.0.0
 
 ## Goal
 

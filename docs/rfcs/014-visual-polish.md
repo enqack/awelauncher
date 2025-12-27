@@ -1,4 +1,9 @@
-# Spec: Visual Polish & UX Details
+# RFC-014: Visual Polish & UX Details
+
+## Status
+- **Date**: 2025-12-26
+- **Status**: Draft
+- **Target Version**: v1.0.0
 
 ## Goal
 

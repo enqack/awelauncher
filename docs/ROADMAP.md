@@ -15,7 +15,7 @@ ecosystem review.
 
 _Focus: Sharpening the tool without changing its identity._
 
-- [x] **Provider Sets**
+- [x] **Provider Sets** ([RFC-012](file:///home/sysop/Projects/awelauncher/docs/rfcs/012-provider-sets.md))
   - Define different workflows (e.g., `--set dev`, `--set web`) with distinct
     provider lists/ordering.
   - _Goal:_ Eliminate config-switching friction.
@@ -52,6 +52,12 @@ _Focus: Structured extensibility._
   - Search/paste history.
 - [ ] **Calculator / Unit Conv** ([RFC-010](file:///home/sysop/Projects/awelauncher/docs/rfcs/010-calculator-provider.md))
   - Built-in utility provider.
+- [ ] **Systems Utility Providers** ([RFC-013](file:///home/sysop/Projects/awelauncher/docs/rfcs/013-utility-providers.md))
+  - Top, Kill, Todo, SSH.
+  - _Goal:_ Replace shell scripts with native speed.
+- [ ] **Visual Polish & UX** ([RFC-014](file:///home/sysop/Projects/awelauncher/docs/rfcs/014-visual-polish.md))
+  - Context icons, breadcrumbs, smart empty states.
+  - _Goal:_ Professional feel and user guidance.
 - [x] Draft RFC-003: Monitor Destinations <!-- id: 73 -->
     - [x] Research LayerShell output selection <!-- id: 74 -->
     - [x] Write RFC-003 specification <!-- id: 75 -->
