@@ -60,6 +60,11 @@ tasks:
     cmds:
       - nix develop -c bash -c "task build && exec bash"
 
+  verify:
+    desc: Verify release (build, test, lint, smoke)
+    cmds:
+      - ./tools/verify_release.sh
+
   bump:
     desc: Bump patch version
     cmds:

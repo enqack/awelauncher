@@ -22,16 +22,18 @@ commands are easier to remember by a short nickname than their full name
 
 ### 1. Pinned Results
 
-Pins are items that are forcibly sorted to the top of the list if they match
-the query at all.
+Pins are items that are forcibly sorted to the top of the list if they match the
+query at all.
 
 - **Configuration**:
+
   ```yaml
   general:
     pins:
       - id: "firefox.desktop"
       - id: "terminal:top"
   ```
+
 - **Behavior**:
   - If a pinned item's `primary` or `id` matches the query (even if it's not the
     highest fuzzy score), it is moved to the top.
@@ -42,6 +44,7 @@ the query at all.
 Aliases allow a user to trigger an item by a shorthand name.
 
 - **Configuration**:
+
   ```yaml
   general:
     aliases:
@@ -50,16 +53,16 @@ Aliases allow a user to trigger an item by a shorthand name.
       - name: "sz"
         target: "run:ssh -p 2222 root@server"
   ```
+
 - **Behavior**:
   - If the query strictly matches an alias `name`, the target item is injected
     as the first result.
-  - Partial matches on aliases (e.g. typing "f" for alias "ff") will still
-    rank the target item higher but not necessarily at the top.
+  - Partial matches on aliases (e.g. typing "f" for alias "ff") will still rank
+    the target item higher but not necessarily at the top.
 
 ### 3. Unified Storage
 
-Both Pins and Aliases can be defined in `config.yaml` globally or within
-`sets`.
+Both Pins and Aliases can be defined in `config.yaml` globally or within `sets`.
 
 ```yaml
 sets:
@@ -76,8 +79,8 @@ sets:
   `aliases` (map of string to string).
 - **Model**:
   - `LauncherModel` will check the `pins` list during the sorting phase.
-  - A new `AliasProvider` or integration into `Aggregator` will handle
-    synthetic results for aliases.
+  - A new `AliasProvider` or integration into `Aggregator` will handle synthetic
+    results for aliases.
 - **Matching**: Alias matches take absolute precedence over fuzzy matches.
 
 ## Open Questions

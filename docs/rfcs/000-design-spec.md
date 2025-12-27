@@ -42,20 +42,33 @@ A wofi-simple launcher with **Qt-grade sizing/styling/icons**, implemented with
 
 - **Plugin System**: External provider binary API.
 - **Workspace movement** (requires protocol support).
-- **Man/Apropos Provider** ([RFC-001](file:///home/sysop/Projects/awelauncher/docs/rfcs/001-man-provider.md)).
-- **Journal/Logs Provider** ([RFC-002](file:///home/sysop/Projects/awelauncher/docs/rfcs/002-journal-provider.md)).
-- **Monitor Placement** ([RFC-003](file:///home/sysop/Projects/awelauncher/docs/rfcs/003-monitor-destinations.md)).
-- **Pinned Results & Aliases** ([RFC-004](file:///home/sysop/Projects/awelauncher/docs/rfcs/004-pinned-results-aliases.md)).
-- **Smarter Scoring** ([RFC-005](file:///home/sysop/Projects/awelauncher/docs/rfcs/005-smarter-scoring.md)).
-- **Enhanced XDG Support** ([RFC-006](file:///home/sysop/Projects/awelauncher/docs/rfcs/006-xdg-desktop-enhancements.md)).
-- **Service Mode (Daemon)** ([RFC-007](file:///home/sysop/Projects/awelauncher/docs/rfcs/007-service-mode.md)).
-- **Context Actions** ([RFC-008](file:///home/sysop/Projects/awelauncher/docs/rfcs/008-context-actions.md)).
-- **Clipboard Provider** ([RFC-009](file:///home/sysop/Projects/awelauncher/docs/rfcs/009-clipboard-provider.md)).
-- **Calculator & Unit Conv** ([RFC-010](file:///home/sysop/Projects/awelauncher/docs/rfcs/010-calculator-provider.md)).
-- **awelaunchctl Utility** ([RFC-011](file:///home/sysop/Projects/awelauncher/docs/rfcs/011-awelaunchctl.md)).
+- **Man/Apropos Provider**
+  ([RFC-001](file:///home/sysop/Projects/awelauncher/docs/rfcs/001-man-provider.md)).
+- **Journal/Logs Provider**
+  ([RFC-002](file:///home/sysop/Projects/awelauncher/docs/rfcs/002-journal-provider.md)).
+- **Monitor Placement**
+  ([RFC-003](file:///home/sysop/Projects/awelauncher/docs/rfcs/003-monitor-destinations.md)).
+- **Pinned Results & Aliases**
+  ([RFC-004](file:///home/sysop/Projects/awelauncher/docs/rfcs/004-pinned-results-aliases.md)).
+- **Smarter Scoring**
+  ([RFC-005](file:///home/sysop/Projects/awelauncher/docs/rfcs/005-smarter-scoring.md)).
+- **Enhanced XDG Support**
+  ([RFC-006](file:///home/sysop/Projects/awelauncher/docs/rfcs/006-xdg-desktop-enhancements.md)).
+- **Service Mode (Daemon)**
+  ([RFC-007](file:///home/sysop/Projects/awelauncher/docs/rfcs/007-service-mode.md)).
+- **Context Actions**
+  ([RFC-008](file:///home/sysop/Projects/awelauncher/docs/rfcs/008-context-actions.md)).
+- **Clipboard Provider**
+  ([RFC-009](file:///home/sysop/Projects/awelauncher/docs/rfcs/009-clipboard-provider.md)).
+- **Calculator & Unit Conv**
+  ([RFC-010](file:///home/sysop/Projects/awelauncher/docs/rfcs/010-calculator-provider.md)).
+- **awelaunchctl Utility**
+  ([RFC-011](file:///home/sysop/Projects/awelauncher/docs/rfcs/011-awelaunchctl.md)).
 
 ### The Road to 1.0.0: "The Complete Systems Launcher"
-v1.0.0 focus is on **semantic stability**, the **awelaunchctl** control plane, and **operational safety** (systemd integration, memory guards).
+
+v1.0.0 focus is on **semantic stability**, the **awelaunchctl** control plane,
+and **operational safety** (systemd integration, memory guards).
 
 ### Core principles
 

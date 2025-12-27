@@ -21,8 +21,8 @@ result.
 
 ### 1. Interception Logic
 
-The `CalcProvider` will attempt to parse the query. If it successfully parses
-as a math expression or a conversion request, it returns a synthetic result.
+The `CalcProvider` will attempt to parse the query. If it successfully parses as
+a math expression or a conversion request, it returns a synthetic result.
 
 - **Examples**:
   - `5 * 4 + 2` -> `Result: 22`
@@ -33,17 +33,19 @@ as a math expression or a conversion request, it returns a synthetic result.
 ### 2. Implementation Options
 
 #### Option A: `QJSEngine` (Easy)
+
 - Use Qt's built-in JavaScript engine to evaluate math.
-- *Pros*: Very flexible, supports functions (`Math.sin`, etc.).
-- *Cons*: Heavier than a simple parser.
+- _Pros_: Very flexible, supports functions (`Math.sin`, etc.).
+- _Cons_: Heavier than a simple parser.
 
 #### Option B: `libqalculate` (Pro)
-- Link against the industry-standard library.
-- *Pros*: Powerful, handles units and currency natively.
-- *Cons*: Additional heavy dependency.
 
-**Decision**: **Option A** for math, with a simple internal multiplier table
-for basic units. If power is needed later, we can move to `libqalculate`.
+- Link against the industry-standard library.
+- _Pros_: Powerful, handles units and currency natively.
+- _Cons_: Additional heavy dependency.
+
+**Decision**: **Option A** for math, with a simple internal multiplier table for
+basic units. If power is needed later, we can move to `libqalculate`.
 
 ### 3. Interaction
 

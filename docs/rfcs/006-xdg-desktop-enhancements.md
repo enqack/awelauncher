@@ -9,15 +9,14 @@
 ## Summary
 
 Bring `awelauncher` to full XDG compliance by respecting advanced `.desktop`
-keys and supporting "Desktop Actions" (e.g., "New Private Window" for
-browsers).
+keys and supporting "Desktop Actions" (e.g., "New Private Window" for browsers).
 
 ## Motivation
 
 Many modern applications hide themselves (`NoDisplay=true`) or provide useful
-contextual keywords that help with search but aren't in the app name. Proper
-XDG support makes the launcher feel like a first-class citizen in the Linux
-desktop ecosystem.
+contextual keywords that help with search but aren't in the app name. Proper XDG
+support makes the launcher feel like a first-class citizen in the Linux desktop
+ecosystem.
 
 ## Detailed Design
 

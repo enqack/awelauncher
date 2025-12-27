@@ -1,6 +1,7 @@
 # RFC-012: Provider Sets Configuration
 
 ## Status
+
 - **Date**: 2025-12-26
 - **Status**: Draft
 - **Target Version**: v1.0.0
@@ -79,9 +80,9 @@ Filters are first-class citizens defined under a `filter` key.
   - Strings wrapped in `/.../` are treated as **Regex** (e.g., `"/^Spotify$/"`).
   - Normal strings are treated as **Substring** match.
 - **Precedence:**
-  1.  `exclude` rules are checked first. If matched -> Drop.
-  2.  If `include` rules exist, check if matched. If not matched -> Drop.
-  3.  Otherwise -> Keep.
+  1. `exclude` rules are checked first. If matched -> Drop.
+  2. If `include` rules exist, check if matched. If not matched -> Drop.
+  3. Otherwise -> Keep.
 
 ### 3. Layout Overrides
 
@@ -91,14 +92,14 @@ dashboards" based on context.
 
 ## Implementation Plan
 
-1.  **Config Schema**: Update `Config.cpp` to parse the `sets` dictionary and
-    its sub-structures (`filter`, `layout`).
-2.  **Core Architecture**:
-    - Refactor `LauncherModel` to support multiple active providers
-      (`std::vector<Provider*>`).
-    - Implement "Aggregator" logic in Model to merge and sort results from all
-      sources.
-3.  **Controller**: Update `--set` CLI handling to:
-    - Load the specified set config.
-    - Instantiate/Activate the correct group of providers.
-    - Apply layout overrides.
+1. **Config Schema**: Update `Config.cpp` to parse the `sets` dictionary and
+   its sub-structures (`filter`, `layout`).
+2. **Core Architecture**:
+   - Refactor `LauncherModel` to support multiple active providers
+     (`std::vector<Provider*>`).
+   - Implement "Aggregator" logic in Model to merge and sorting results from all
+     sources.
+3. **Controller**: Update `--set` CLI handling to:
+   - Load the specified set config.
+   - Instantiate/Activate the correct group of providers.
+   - Apply layout overrides.

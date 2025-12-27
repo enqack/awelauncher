@@ -29,8 +29,8 @@ without requiring a separate heavy application.
 
 ### 2. Storage
 
-- **Persistence**: Items are stored in `~/.cache/awelauncher/clipboard.json`
-  (or a simple sqlite db if volume is high).
+- **Persistence**: Items are stored in `~/.cache/awelauncher/clipboard.json` (or
+  a simple sqlite db if volume is high).
 - **Trimming**: Keep a maximum of 100 entries by default.
 
 ### 3. Search & Interaction
@@ -47,8 +47,8 @@ without requiring a separate heavy application.
 ## Technical Implementation
 
 - **`ClipboardProvider`**: Implements the `Provider` interface.
-- **Integration**: Works best in **Service Mode (RFC-007)** to ensure no
-  missed entries while the launcher is hidden.
+- **Integration**: Works best in **Service Mode (RFC-007)** to ensure no missed
+  entries while the launcher is hidden.
 - **Security**: Sensitive data (passwords) can be ignored if the application
   marks them (e.g., via `x-kde-passwordManagerHint`).
 

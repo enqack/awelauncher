@@ -64,8 +64,8 @@ journalctl -n 50 --output=json --reverse
 2. **Unit Logs (`logs:unit`)**:
    - If user types `logs sshd`, we filter `journalctl -u sshd`.
    - Requires parsing query to construct `journalctl` args?
-   - **Optimization**: Maybe just filter the JSON output in memory if N is
-     small (100).
+   - **Optimization**: Maybe just filter the JSON output in memory if N is small
+     (100).
 
 3. **Error Stream (`errors`)**:
    - `journalctl -p 3 -n 50` (Show only errors).

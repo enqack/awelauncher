@@ -9,13 +9,13 @@
 ## Summary
 
 Enhance the matching algorithm to provide more intuitive ranking and unify the
-MRU (Most Recently Used) history across all providers (`run`, `dmenu`,
-`ssh`, etc.).
+MRU (Most Recently Used) history across all providers (`run`, `dmenu`, `ssh`,
+etc.).
 
 ## Motivation
 
-The current fuzzy matcher is powerful but can be unpredictable. Users expect
-"f" to prioritize "Firefox" (prefix) over "Google Chrome" (subsequence).
+The current fuzzy matcher is powerful but can be unpredictable. Users expect "f"
+to prioritize "Firefox" (prefix) over "Google Chrome" (subsequence).
 Additionally, history tracking is currently inconsistent between providers.
 
 ## Detailed Design
@@ -24,12 +24,12 @@ Additionally, history tracking is currently inconsistent between providers.
 
 We will move from a pure fuzzy score to a tiered scoring system:
 
-| Tier | Match Type | Priority | Example (Query: "fir") |
-| :--- | :--- | :--- | :--- |
-| 1 | **Exact Match** | Highest | "fir" -> "fir" (binary) |
-| 2 | **Prefix Match** | High | "fir" -> "**Fir**efox" |
-| 3 | **Acronym** | Medium | "st" -> "**S**ublime **T**ext" |
-| 4 | **Subsequence** | Low | "on" -> "pyth**on**" |
+| Tier | Match Type       | Priority | Example (Query: "fir")         |
+| :--- | :--------------- | :------- | :----------------------------- |
+| 1    | **Exact Match**  | Highest  | "fir" -> "fir" (binary)        |
+| 2    | **Prefix Match** | High     | "fir" -> "**Fir**efox"         |
+| 3    | **Acronym**      | Medium   | "st" -> "**S**ublime **T**ext" |
+| 4    | **Subsequence**  | Low      | "on" -> "pyth**on**"           |
 
 **Scoring Calculation**:
 `FinalScore = (TierWeight * MatchQuality) + (MRU_Boost * Recency)`
@@ -50,14 +50,15 @@ schema that tracks interactions globally.
 
 - **Persistence**: Switched from `mru.json` to a more structured `history.json`
   under `~/.cache/awelauncher/`.
-- **Global Boost**: An item frequently launched in `drun` will still get a
-  boost if it appears in a `run` or `set` search.
+- **Global Boost**: An item frequently launched in `drun` will still get a boost
+  if it appears in a `run` or `set` search.
 
 ## Technical Implementation
 
 - **`FuzzyMatcher.cpp`**: Refactor to return a `MatchResult` struct containing
   both the score and the match type/positions.
-- **`MRUTracker.cpp`**: Update to handle global ID tracking. Use `QHash<QString, HistoryEntry>` for O(1) lookups during scoring.
+- **`MRUTracker.cpp`**: Update to handle global ID tracking. Use
+  `QHash<QString, HistoryEntry>` for O(1) lookups during scoring.
 
 ## Open Questions
 

@@ -1,8 +1,9 @@
 # awelauncher
 
+<!-- markdownlint-disable-next-line MD033 -->
 <img src="assets/logo.png" width="128" alt="awelauncher logo">
 
-[![Version](https://img.shields.io/badge/version-0.5.2-blue.svg)](VERSION)
+[![Version](https://img.shields.io/badge/version-0.5.3-blue.svg)](VERSION)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Wayland-orange.svg)](https://wayland.freedesktop.org/)
 [![Qt](https://img.shields.io/badge/Qt-6-blue?logo=qt)](https://www.qt.io/)
@@ -18,9 +19,11 @@
 ## Features
 
 - **Fuzzy search**: Smart scoring with precision matching (Exact/Prefix/Fuzzy)
-- **Pins & Aliases**: Pin favorite apps or create custom aliases (e.g. `gc` -> `git commit`)
+- **Pins & Aliases**: Pin favorite apps or create custom aliases (e.g. `gc` ->
+  `git commit`)
 - **Multiple modes**:
-  - Desktop apps (`drun`) - Supports Actions, Keywords, Categories ("Game", "Settings")
+  - Desktop apps (`drun`) - Supports Actions, Keywords, Categories ("Game",
+    "Settings")
   - Command runner (`run`)
   - Window switcher (`window`) - Wayland window management
   - **Process Manager** (`top`, `kill`) - _New in 0.4.0_
@@ -69,6 +72,7 @@ The project logo is available in multiple sizes in the [`assets/`](assets/)
 directory, ranging from 16x16 to 512x512 pixels, for use in various system
 integrations.
 
+<!-- markdownlint-disable-next-line MD033 -->
 <img src="assets/logo_128.png" width="96" alt="awelauncher branding">
 
 ```bash

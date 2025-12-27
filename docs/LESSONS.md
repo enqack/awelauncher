@@ -160,42 +160,54 @@ files by default. Untracked config files result in `ENOENT`.
   specified (e.g., ` ```bash `). Even plain text blocks should be tagged as
   ` ```text ` or ` ```plain `.
 
-
 ## 🏎️ Performance & Concurrency
 
 ### 16. Speed Exposes Race Conditions (Startup Timing)
 
-**Gotcha**: Optimizing startup time (e.g., via a daemon) can break functionality that accidentally relied on slow startup.
-In our case, the `WindowProvider` previously had enough time to initialize and receive Wayland events while the QML engine was slowly loading.
-When we made startup "instant" (~7ms), the provider queried the window list before the compositor had sent any events, resulting in an empty list.
+**Gotcha**: Optimizing startup time (e.g., via a daemon) can break functionality
+that accidentally relied on slow startup. In our case, the `WindowProvider`
+previously had enough time to initialize and receive Wayland events while the
+QML engine was slowly loading. When we made startup "instant" (~7ms), the
+provider queried the window list before the compositor had sent any events,
+resulting in an empty list.
 
 **Solution**:
 
 - **Never assume initial state is complete** in async protocols (Wayland).
-- **Always connect signals** (e.g., `windowsChanged`) to UI refresh logic to handle data arriving *after* initialization.
-- **Lazy Loading**: Don't initialize heavy UI until needed but ensure data providers start listening immediately.
+- **Always connect signals** (e.g., `windowsChanged`) to UI refresh logic to
+  handle data arriving _after_ initialization.
+- **Lazy Loading**: Don't initialize heavy UI until needed but ensure data
+  providers start listening immediately.
 
 ### 17. Background Daemons vs. Debugging
 
-**Gotcha**: When debugging a client/server app, running the client with `--debug` flags might connect to a SILENT background daemon (from a previous run).
-Users (and developers) will see "command sent" and then nothing, assuming the app is broken, when it's just the background process swallowing logs or validation errors.
+**Gotcha**: When debugging a client/server app, running the client with
+`--debug` flags might connect to a SILENT background daemon (from a previous
+run). Users (and developers) will see "command sent" and then nothing, assuming
+the app is broken, when it's just the background process swallowing logs or
+validation errors.
 
 **Solution**:
 
 - Implement a `kill` or `restart` command in the CLI.
-- Ensure the client prints a clear "Connected to existing daemon (PID: X)" message.
+- Ensure the client prints a clear "Connected to existing daemon (PID: X)"
+  message.
 - "Fail Loudly" if the daemon is unresponsive or version-mismatched.
 
 ### 18. Custom Wayland Connections & Qt Event Loop
 
-**Gotcha**: If you use `wl_display_connect(nullptr)` to create a separate Wayland connection (isolating your logic from Qt's internal connection), **Qt will not pump events for you**.
-Calls to `wl_display_roundtrip` specifically block and pump, but once you return to the main loop, your connection goes silent.
+**Gotcha**: If you use `wl_display_connect(nullptr)` to create a separate
+Wayland connection (isolating your logic from Qt's internal connection), **Qt
+will not pump events for you**. Calls to `wl_display_roundtrip` specifically
+block and pump, but once you return to the main loop, your connection goes
+silent.
 
 **Solution**:
+
 - Use `wl_display_get_fd()` to get the file descriptor.
 - Wrap it in a `QSocketNotifier` monitoring `QSocketNotifier::Read`.
 - Connect the notifier to a slot that calls `wl_display_dispatch()`.
 
 ---
 
-_Last updated: 2025-12-27_
+Last updated: 2025-12-27

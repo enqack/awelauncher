@@ -14,10 +14,10 @@ Config", "Kill Parent").
 
 ## Motivation
 
-Selecting an item shouldn't just do one thing. Sometimes you want to launch
-an app in a terminal to see its logs, or move a window to a specific
-workspace without switching to it. Context actions provide this power without
-cluttering the primary interface.
+Selecting an item shouldn't just do one thing. Sometimes you want to launch an
+app in a terminal to see its logs, or move a window to a specific workspace
+without switching to it. Context actions provide this power without cluttering
+the primary interface.
 
 ## Detailed Design
 
@@ -60,4 +60,6 @@ struct LauncherAction {
 ## Open Questions
 
 - **Discovery**: How do users know an item has actions?
-  - _Proposed_: A small hint/icon in the [Footer.qml](file:///home/sysop/Projects/awelauncher/src/qml/Footer.qml) (e.g., "[Tab] Actions").
+  - _Proposed_: A small hint/icon in the
+    [Footer.qml](file:///home/sysop/Projects/awelauncher/src/qml/Footer.qml)
+    (e.g., "[Tab] Actions").

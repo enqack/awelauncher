@@ -62,20 +62,20 @@ Regex: `^(\S+)\s+\((.+?)\)\s+-\s+(.+)$`
 
 We can expose two operational modes or "sub-providers":
 
-1.  **Direct Search (`man`)**:
-    - Users types `man <query>`.
-    - Provider runs `apropos <query>`.
-    - Returns matches.
-    - **Pros**: extremely fast, uses system index optimization.
-    - **Cons**: Requires prefix triggering or explicit mode.
+1. **Direct Search (`man`)**:
+   - Users types `man <query>`.
+   - Provider runs `apropos <query>`.
+   - Returns matches.
+   - **Pros**: extremely fast, uses system index optimization.
+   - **Cons**: Requires prefix triggering or explicit mode.
 
-2.  **Global Index (`dman` / `docs`)**:
-    - Runs `apropos .` (dump all) at startup (async).
-    - Caches results in memory.
-    - Participating in the global fuzzy search.
-    - **Pros**: Instant fuzzy find.
-    - **Cons**: ~10k+ items might pollute the global namespace. Best used in a
-      dedicated "Docs" Provider Set.
+2. **Global Index (`dman` / `docs`)**:
+   - Runs `apropos .` (dump all) at startup (async).
+   - Caches results in memory.
+   - Participating in the global fuzzy search.
+   - **Pros**: Instant fuzzy find.
+   - **Cons**: ~10k+ items might pollute the global namespace. Best used in a
+     dedicated "Docs" Provider Set.
 
 ### 3. Graceful Degradation
 
