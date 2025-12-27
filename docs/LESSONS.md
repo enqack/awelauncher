@@ -160,6 +160,32 @@ files by default. Untracked config files result in `ENOENT`.
   specified (e.g., ` ```bash `). Even plain text blocks should be tagged as
   ` ```text ` or ` ```plain `.
 
+
+## 🏎️ Performance & Concurrency
+
+### 16. Speed Exposes Race Conditions (Startup Timing)
+
+**Gotcha**: Optimizing startup time (e.g., via a daemon) can break functionality that accidentally relied on slow startup.
+In our case, the `WindowProvider` previously had enough time to initialize and receive Wayland events while the QML engine was slowly loading.
+When we made startup "instant" (~7ms), the provider queried the window list before the compositor had sent any events, resulting in an empty list.
+
+**Solution**:
+
+- **Never assume initial state is complete** in async protocols (Wayland).
+- **Always connect signals** (e.g., `windowsChanged`) to UI refresh logic to handle data arriving *after* initialization.
+- **Lazy Loading**: Don't initialize heavy UI until needed but ensure data providers start listening immediately.
+
+### 17. Background Daemons vs. Debugging
+
+**Gotcha**: When debugging a client/server app, running the client with `--debug` flags might connect to a SILENT background daemon (from a previous run).
+Users (and developers) will see "command sent" and then nothing, assuming the app is broken, when it's just the background process swallowing logs or validation errors.
+
+**Solution**:
+
+- Implement a `kill` or `restart` command in the CLI.
+- Ensure the client prints a clear "Connected to existing daemon (PID: X)" message.
+- "Fail Loudly" if the daemon is unresponsive or version-mismatched.
+
 ---
 
-_Last updated: 2025-12-26_
+_Last updated: 2025-12-27_

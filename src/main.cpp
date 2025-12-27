@@ -285,6 +285,7 @@ int main(int argc, char *argv[])
     controller->setModel(model);
 
     // Initialize WindowProvider if possible
+    // Initialize WindowProvider if possible
     WindowProvider* wp = new WindowProvider(&app);
     if (wp->initialize()) {
         controller->setWindowProvider(wp);

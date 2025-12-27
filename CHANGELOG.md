@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.1] - 2025-12-27
+
+### Changed
+- Bumped version to 0.5.1
+
+## [0.5.1]
+### Fixed
+- **Window Mode**: Fixed race condition where window list was empty on fast startup (added dynamic signal connection).
+
 ## [0.5.0] - 2025-12-26
 
 ### Added

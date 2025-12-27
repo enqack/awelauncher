@@ -133,6 +133,7 @@ private:
    QString m_icon = "search";
    QString m_mode = "drun";
    QString m_promptOverride = "";
+   QString m_currentSetName = "";
    QString m_pendingHandle = "";
     std::function<void()> m_uiInitializer = nullptr;
     class QWindow* m_mainWindow = nullptr;

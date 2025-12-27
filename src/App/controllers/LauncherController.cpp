@@ -33,6 +33,16 @@ void LauncherController::setModel(LauncherModel* model)
 void LauncherController::setWindowProvider(WindowProvider* provider)
 {
     m_windowProvider = provider;
+    if (m_windowProvider) {
+        connect(m_windowProvider, &WindowProvider::windowsChanged, this, [this]() {
+            // If we are currently showing windows, refresh the view
+            if (m_mode == Constants::ProviderWindow) {
+                // Determine if we are in a set or standalone mode
+                // If m_currentSetName is empty, we are likely in standalone mode override
+                loadSet(m_currentSetName, m_mode);
+            }
+        });
+    }
 }
 
 void LauncherController::setDmenuMode(bool enabled)
@@ -287,6 +297,8 @@ void LauncherController::quit()
 void LauncherController::loadSet(const QString &setName, const QString &modeOverride)
 {
     if (!m_model) return;
+    
+    m_currentSetName = setName;
 
     Config::ProviderSet activeSet;
     bool usingSet = false;
