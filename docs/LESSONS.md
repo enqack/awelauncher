@@ -186,6 +186,16 @@ Users (and developers) will see "command sent" and then nothing, assuming the ap
 - Ensure the client prints a clear "Connected to existing daemon (PID: X)" message.
 - "Fail Loudly" if the daemon is unresponsive or version-mismatched.
 
+### 18. Custom Wayland Connections & Qt Event Loop
+
+**Gotcha**: If you use `wl_display_connect(nullptr)` to create a separate Wayland connection (isolating your logic from Qt's internal connection), **Qt will not pump events for you**.
+Calls to `wl_display_roundtrip` specifically block and pump, but once you return to the main loop, your connection goes silent.
+
+**Solution**:
+- Use `wl_display_get_fd()` to get the file descriptor.
+- Wrap it in a `QSocketNotifier` monitoring `QSocketNotifier::Read`.
+- Connect the notifier to a slot that calls `wl_display_dispatch()`.
+
 ---
 
 _Last updated: 2025-12-27_

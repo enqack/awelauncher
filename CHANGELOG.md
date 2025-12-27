@@ -2,14 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.5.1] - 2025-12-27
+## [0.5.2] - 2025-12-27
 
 ### Changed
-- Bumped version to 0.5.1
+- Bumped version to 0.5.2
 
-## [0.5.1]
+## [0.5.2] - 2025-12-27
 ### Fixed
-- **Window Mode**: Fixed race condition where window list was empty on fast startup (added dynamic signal connection).
+- **Window Mode**: Fixed empty window list in standalone mode by implementing a `QSocketNotifier` event pump for the independent Wayland connection.
+- **Window Mode**: Fixed race condition on startup by properly connecting `windowsChanged` signals to the UI loader.
+- **Documentation**: Corrected incorrect `-d` short flag documentation for Daemon mode (only `--daemon` is supported).
+
+## [0.5.1] - 2025-12-27
+### Changed
+- Bumped version to 0.5.1
 
 ## [0.5.0] - 2025-12-26
 
